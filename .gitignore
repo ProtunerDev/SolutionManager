@@ -1,0 +1,86 @@
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.Python
+env/
+venv/
+.venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Flask
+instance/
+.webassets-cache
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Development and Debug Files
+debug_*.py
+test_*.py
+check_*.py
+cleanup_*.py
+migrate_*.sql
+backup_*.sql
+*_test.py
+*_debug.py
+
+# Documentation (temporary)
+ADMIN_FUNCTIONALITY_STATUS.md
+COMO_ABRIR_DEVELOPER_TOOLS.md
+
+# AWS
+.aws/
+
+# Node.js (if using any frontend build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Local uploads (since using S3)
+app/static/uploads/*
+!app/static/uploads/.gitkeep

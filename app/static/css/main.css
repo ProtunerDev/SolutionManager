@@ -1,0 +1,46 @@
+body {
+    padding-bottom: 20px;
+}
+
+.file-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.file-indicator.loaded {
+    background-color: #28a745;
+}
+
+.file-indicator.not-loaded {
+    background-color: #dc3545;
+}
+
+.progress {
+    height: 10px;
+    margin-top: 10px;
+}
+
+.solution-card {
+    margin-bottom: 20px;
+}
+
+.solution-types {
+    margin-top: 10px;
+}
+
+.solution-types span {
+    display: inline-block;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    padding: 2px 8px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+.navbar-custom {
+    background-color: #202020 !important; /* medium dark black */
+}

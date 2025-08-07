@@ -1,0 +1,149 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3>Solutions</h3>
+        <a href="{{ url_for('main.add_solution') }}" class="btn btn-success">Add Solution</a>
+    </div>
+    <div class="card-body">
+        <div class="mb-4">
+            <h4>Search Solutions</h4>
+            <form method="GET" action="{{ url_for('main.solutions') }}">
+                <!-- Search A -->
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                        <select class="form-select" id="vehicle_type" name="vehicle_type">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="make" class="form-label">Make</label>
+                        <select class="form-select" id="make" name="make">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="model" class="form-label">Model</label>
+                        <select class="form-select" id="model" name="model">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="engine" class="form-label">Engine</label>
+                        <select class="form-select" id="engine" name="engine">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="ecu_type" class="form-label">ECU Type</label>
+                        <select class="form-select" id="ecu_type" name="ecu_type">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Search B -->
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="hardware_number" class="form-label">Hardware Number</label>
+                        <input id="hardware_number" name="hardware_number" class="form-control">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="software_number" class="form-label">Software Number</label>
+                        <input id="software_number" name="software_number" class="form-control">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="software_update_number" class="form-label">Software Update Number</label>
+                        <input id="software_update_number" name="software_update_number" class="form-control">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="transmission_type" class="form-label">Transmission Type</label>
+                        <select class="form-select" id="transmission_type" name="transmission_type">
+                            <option value="">-- Select --</option>
+                            <option value="Automatic">Automatic</option>
+                            <option value="Manual">Manual</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary mb-3">Search</button>
+                        <a href="{{ url_for('main.solutions') }}" class="btn btn-secondary mb-3 ms-2">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <hr>
+        
+        <div class="mt-4">
+            <h4>Results</h4>
+            {% if not search_performed %}
+                <div class="alert alert-info">
+                    Use the search form above to find solutions.
+                </div>
+            {% elif solutions %}
+                {% for solution in solutions %}
+                <div class="card solution-card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Solution #{{ solution.id }}</h5>
+                        <div>
+                            <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" class="btn btn-sm btn-info">View</a>
+                            <a href="{{ url_for('main.apply_solution', solution_id=solution.id) }}" class="btn btn-sm btn-success">Apply</a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Vehicle:</strong> {{ solution.vehicle_type }} {{ solution.make }} {{ solution.model }}</p>
+                                <p><strong>Engine:</strong> {{ solution.engine }}</p>
+                                <p><strong>Year:</strong> {{ solution.year }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>ECU Type:</strong> {{ solution.ecu_type }}</p>
+                                <p><strong>Hardware:</strong> {{ solution.hardware_number }}</p>
+                                <p><strong>Software:</strong> {{ solution.software_number }} ({{ solution.software_update_number }})</p>
+                            </div>
+                        </div>
+                        <div class="solution-types mb-3">
+                            {% if solution.stage_1 %}<span class="badge bg-primary me-1">Stage 1</span>{% endif %}
+                            {% if solution.stage_2 %}<span class="badge bg-primary me-1">Stage 2</span>{% endif %}
+                            {% if solution.pop_and_bangs %}<span class="badge bg-warning me-1">Pop and Bangs</span>{% endif %}
+                            {% if solution.vmax %}<span class="badge bg-info me-1">Vmax</span>{% endif %}
+                            {% if solution.dtc_off %}<span class="badge bg-secondary me-1">DTC Off</span>{% endif %}
+                            {% if solution.full_decat %}<span class="badge bg-danger me-1">Full Decat</span>{% endif %}
+                            {% if solution.immo_off %}<span class="badge bg-dark me-1">Immo Off</span>{% endif %}
+                            {% if solution.evap_off %}<span class="badge bg-secondary me-1">Evap Off</span>{% endif %}
+                            {% if solution.tva %}<span class="badge bg-success me-1">TVA</span>{% endif %}
+                            {% if solution.egr_off %}<span class="badge bg-warning me-1">EGR Off</span>{% endif %}
+                            {% if solution.dpf_off %}<span class="badge bg-danger me-1">DPF Off</span>{% endif %}
+                            {% if solution.egr_dpf_off %}<span class="badge bg-danger me-1">EGR + DPF Off</span>{% endif %}
+                            {% if solution.adblue_off %}<span class="badge bg-info me-1">AdBlue Off</span>{% endif %}
+                            {% if solution.egr_dpf_adblue_off %}<span class="badge bg-danger me-1">EGR + DPF + AdBlue Off</span>{% endif %}
+                        </div>
+                        {% if solution.description %}
+                        <div class="mt-3">
+                            <p><strong>Description:</strong> {{ solution.description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    No solutions found matching your criteria.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}
+

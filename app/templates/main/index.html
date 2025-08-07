@@ -1,0 +1,132 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        {% if current_user.is_authenticated %}
+        <div class="jumbotron bg-primary text-white p-4 rounded mb-4">
+            <h1 class="display-4">
+                <i class="fas fa-microchip"></i> Welcome back, {{ current_user.username }}!
+            </h1>
+            <p class="lead">Your Protuner Solution Manager dashboard is ready.</p>
+            <hr class="my-4">
+            <p>Manage ECU solutions, modify files, and search vehicle databases.</p>
+            <a class="btn btn-light btn-lg" href="{{ url_for('main.solutions') }}" role="button">
+                <i class="fas fa-database"></i> View Solutions
+            </a>
+        </div>
+        {% else %}
+        <div class="jumbotron bg-light p-4 rounded mb-4">
+            <h1 class="display-4">
+                <i class="fas fa-microchip text-primary"></i> Protuner Solution Manager
+            </h1>
+            <p class="lead">Professional ECU tuning and solution management platform.</p>
+            <hr class="my-4">
+            <p>Access vehicle solutions, modify ECU files, and manage tuning data.</p>
+            <p class="text-muted">
+                <i class="fas fa-info-circle"></i> 
+                Access is restricted to authorized technicians only.
+            </p>
+            <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">
+                <i class="fas fa-envelope"></i> Request Access
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-database fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">ECU Solutions</h5>
+                <p class="card-text">Search and manage ECU tuning solutions for various vehicle makes and models.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-file-code fa-3x text-success mb-3"></i>
+                <h5 class="card-title">File Modification</h5>
+                <p class="card-text">Modify ECU files with professional tools and tuning parameters.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-search fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Advanced Search</h5>
+                <p class="card-text">Find solutions by vehicle type, ECU, hardware/software numbers, and more.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.is_authenticated %}
+<!-- Quick Stats for authenticated users -->
+<div class="row mt-5">
+    <div class="col-md-12">
+        <h3><i class="fas fa-tachometer-alt"></i> Dashboard</h3>
+        <hr>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>Ready</h4>
+                        <p>System Status</p>
+                    </div>
+                    <i class="fas fa-microchip fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>Online</h4>
+                        <p>Database</p>
+                    </div>
+                    <i class="fas fa-database fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ current_user.username }}</h4>
+                        <p>Current User</p>
+                    </div>
+                    <i class="fas fa-user fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>Active</h4>
+                        <p>Session</p>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

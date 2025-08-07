@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-home"></i> Home Dashboard</h2>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5>Recent Solutions</h5>
+            <p class="text-muted">Showing latest solutions from the database</p>
+            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Vehicle</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for solution in recent_solutions %}
+                        <tr>
+                            <td>#{{ solution.id }}</td>
+                            <td>{{ solution.make }} {{ solution.model }}</td>
+                            <td>{{ solution.created_at.strftime('%Y-%m-%d') if solution.created_at else 'N/A' }}</td>
+                            <td>
+                                <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" 
+                                   class="btn btn-sm btn-primary">View</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No solutions found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <a href="{{ url_for('main.add_solution') }}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Add Solution
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{{ url_for('main.solutions') }}" class="btn btn-primary">
+                <i class="fas fa-database"></i> All Solutions
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

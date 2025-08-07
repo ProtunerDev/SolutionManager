@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h3>Download MOD2 File</h3>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="mod2_filename" class="form-label">MOD2 File Name</label>
+            <input type="text" class="form-control" id="mod2_filename" name="mod2_filename" value="mod2.mod" required>
+            <div class="form-text">You can change the file name. The <b>.mod</b> extension will be added if not present.</div>
+        </div>
+        <button type="submit" class="btn btn-success">Download MOD2</button>
+    </form>
+</div>
+{% endblock %}

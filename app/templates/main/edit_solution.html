@@ -1,0 +1,197 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Edit Solution</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                        <select class="form-select" id="vehicle_type" name="vehicle_type" required>
+                            <option value="">-- Select --</option>
+                            {% for type in vehicle_types %}
+                            <option value="{{ type }}" {% if solution.vehicle_type == type %}selected{% endif %}>{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="make" class="form-label">Make</label>
+                        <select class="form-select" id="make" name="make" required>
+                            <option value="">-- Select --</option>
+                            <option value="{{ solution.make }}" selected>{{ solution.make }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="model" class="form-label">Model</label>
+                        <select class="form-select" id="model" name="model" required>
+                            <option value="">-- Select --</option>
+                            <option value="{{ solution.model }}" selected>{{ solution.model }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="engine" class="form-label">Engine</label>
+                        <select class="form-select" id="engine" name="engine" required>
+                            <option value="">-- Select --</option>
+                            <option value="{{ solution.engine }}" selected>{{ solution.engine }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="year" class="form-label">Year</label>
+                        <select class="form-select" id="year" name="year" required>
+                            <option value="">-- Select --</option>
+                            <option value="{{ solution.year }}" selected>{{ solution.year }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="ecu_type" class="form-label">ECU Type</label>
+                        <select class="form-select" id="ecu_type" name="ecu_type" required>
+                            <option value="">-- Select --</option>
+                            <option value="{{ solution.ecu_type }}" selected>{{ solution.ecu_type }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="hardware_number" class="form-label">Hardware Number</label>
+                        <select class="form-select" id="hardware_number" name="hardware_number" required>
+                            <option value="">-- Select --</option>
+                            <option value="{{ solution.hardware_number }}" selected>{{ solution.hardware_number }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="software_number" class="form-label">Software Number</label>
+                        <select class="form-select" id="software_number" name="software_number" required>
+                            <option value="">-- Select --</option>
+                            <option value="{{ solution.software_number }}" selected>{{ solution.software_number }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="software_update_number" class="form-label">Software Update Number</label>
+                        <select class="form-select" id="software_update_number" name="software_update_number" required>
+                            <option value="">-- Select --</option>
+                            <option value="{{ solution.software_update_number }}" selected>{{ solution.software_update_number }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transmission_type" class="form-label">Transmission Type</label>
+                        <select class="form-select" id="transmission_type" name="transmission_type" required>
+                            <option value="">-- Select --</option>
+                            <option value="Automatic" {% if solution.transmission_type == 'Automatic' %}selected{% endif %}>Automatic</option>
+                            <option value="Manual" {% if solution.transmission_type == 'Manual' %}selected{% endif %}>Manual</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <h4>Solution Types</h4>
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="stage_1" name="stage_1" {% if solution.stage_1 %}checked{% endif %}>
+                                <label class="form-check-label" for="stage_1">Stage 1</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="stage_2" name="stage_2" {% if solution.stage_2 %}checked{% endif %}>
+                                <label class="form-check-label" for="stage_2">Stage 2</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="pop_and_bangs" name="pop_and_bangs" {% if solution.pop_and_bangs %}checked{% endif %}>
+                                <label class="form-check-label" for="pop_and_bangs">Pop and Bangs</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="vmax" name="vmax" {% if solution.vmax %}checked{% endif %}>
+                                <label class="form-check-label" for="vmax">Vmax</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dtc_off" name="dtc_off" {% if solution.dtc_off %}checked{% endif %}>
+                                <label class="form-check-label" for="dtc_off">DTC Off</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="full_decat" name="full_decat" {% if solution.full_decat %}checked{% endif %}>
+                                <label class="form-check-label" for="full_decat">Full Decat</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="immo_off" name="immo_off" {% if solution.immo_off %}checked{% endif %}>
+                                <label class="form-check-label" for="immo_off">Immo Off</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="evap_off" name="evap_off" {% if solution.evap_off %}checked{% endif %}>
+                                <label class="form-check-label" for="evap_off">Evap Off</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tva" name="tva" {% if solution.tva %}checked{% endif %}>
+                                <label class="form-check-label" for="tva">TVA</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="egr_off" name="egr_off" {% if solution.egr_off %}checked{% endif %}>
+                                <label class="form-check-label" for="egr_off">EGR Off</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dpf_off" name="dpf_off" {% if solution.dpf_off %}checked{% endif %}>
+                                <label class="form-check-label" for="dpf_off">DPF Off</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="egr_dpf_off" name="egr_dpf_off" {% if solution.egr_dpf_off %}checked{% endif %}>
+                                <label class="form-check-label" for="egr_dpf_off">EGR + DPF Off</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="adblue_off" name="adblue_off" {% if solution.adblue_off %}checked{% endif %}>
+                                <label class="form-check-label" for="adblue_off">AdBlue Off</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="egr_dpf_adblue_off" name="egr_dpf_adblue_off" {% if solution.egr_dpf_adblue_off %}checked{% endif %}>
+                                <label class="form-check-label" for="egr_dpf_adblue_off">EGR + DPF + AdBlue Off</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ solution.description }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Update Solution</button>
+                <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

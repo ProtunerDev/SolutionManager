@@ -1,0 +1,3 @@
+# Keep this directory in git
+# The uploads directory is needed for local development
+# but files are stored in S3 in production

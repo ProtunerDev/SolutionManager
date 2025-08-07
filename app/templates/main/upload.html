@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Upload Binary Files</h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header">ORI1 File</div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="file_type" value="ori1">
+                            <div class="mb-3">
+                                <label for="ori1File" class="form-label">Select ORI1 File</label>
+                                <input class="form-control" type="file" id="ori1File" name="file">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </form>
+                        {% if session.get('files') and session['files'].get('ori1') %}
+                        <div class="alert alert-success mt-3">
+                            ORI1 file uploaded
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header">MOD1 File</div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="file_type" value="mod1">
+                            <div class="mb-3">
+                                <label for="mod1File" class="form-label">Select MOD1 File</label>
+                                <input class="form-control" type="file" id="mod1File" name="file">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </form>
+                        {% if session.get('files') and session['files'].get('mod1') %}
+                        <div class="alert alert-success mt-3">
+                            MOD1 file uploaded
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header">ORI2 File</div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="file_type" value="ori2">
+                            <div class="mb-3">
+                                <label for="ori2File" class="form-label">Select ORI2 File</label>
+                                <input class="form-control" type="file" id="ori2File" name="file">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </form>
+                        {% if session.get('files') and session['files'].get('ori2') %}
+                        <div class="alert alert-success mt-3">
+                            ORI2 file uploaded
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            {% if session.get('files') and session['files'].get('ori1') and session['files'].get('mod1') %}
+            <a href="{{ url_for('main.compare') }}" class="btn btn-success">Compare Files</a>
+            {% else %}
+            <div class="alert alert-info">
+                Please upload ORI1 and MOD1 files to compare them.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

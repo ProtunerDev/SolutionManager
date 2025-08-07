@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-spinner fa-spin"></i> Processing Reset Link</h4>
+                </div>
+                <div class="card-body text-center">
+                    <p>Processing your password reset request...</p>
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Extraer parámetros del hash de la URL
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    
+    // Verificar si hay errores
+    const error = params.get('error');
+    const errorCode = params.get('error_code');
+    const errorDescription = params.get('error_description');
+    
+    if (error) {
+        console.log('Error detected:', error, errorCode, errorDescription);
+        
+        if (errorCode === 'otp_expired' || error === 'access_denied') {
+            // Enlace expirado - redirigir a página de reset
+            window.location.replace('/auth/expired_link');
+            return;
+        }
+        
+        // Otros errores - redirigir a login con mensaje
+        window.location.replace('/auth/login?error=' + encodeURIComponent(errorDescription || error));
+        return;
+    }
+    
+    // No hay errores - procesar token de reset normal
+    const accessToken = params.get('access_token');
+    const tokenType = params.get('token_type');
+    const expiresAt = params.get('expires_at');
+    const type = params.get('type');
+    
+    if (accessToken && tokenType && type === 'recovery') {
+        // Redirigir a la página de reset password con los parámetros
+        const resetUrl = `/auth/reset_password?access_token=${accessToken}&token_type=${tokenType}&expires_at=${expiresAt}`;
+        window.location.replace(resetUrl);
+    } else {
+        // Parámetros inválidos
+        setTimeout(() => {
+            window.location.replace('/auth/login?error=invalid_reset_link');
+        }, 2000);
+    }
+});
+</script>
+{% endblock %}

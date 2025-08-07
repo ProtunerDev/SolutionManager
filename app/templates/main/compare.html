@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Compare Binary Files</h3>
+    </div>
+    <div class="card-body">
+        {% if session.files and 'ori1' in session.files and 'mod1' in session.files %}
+        <form method="POST">
+            <div class="mb-3">
+                <label for="bitSize" class="form-label">Bit Size</label>
+                <select class="form-select" id="bitSize" name="bit_size">
+                    <option value="8">8-bit</option>
+                    <option value="16">16-bit</option>
+                    <option value="32">32-bit</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Compare Files</button>
+        </form>
+        {% else %}
+        <div class="alert alert-warning">
+            Please upload ORI1 and MOD1 files first.
+            <a href="{{ url_for('main.upload') }}" class="btn btn-primary btn-sm ms-3">Go to Upload</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
