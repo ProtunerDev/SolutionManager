@@ -367,7 +367,9 @@ def solution_detail(solution_id):
         differences_data, total_differences = storage.get_differences(solution_id)
         
         differences = []
+        has_differences = False
         if differences_data:
+            has_differences = True
             for diff in differences_data:
                 address = diff['memory_address']
                 ori1_value = diff['ori1_value']
@@ -381,7 +383,9 @@ def solution_detail(solution_id):
         'main/solution_detail.html',
         title=f'Solution {solution_id}',
         solution=solution,
-        differences=differences
+        differences=differences,
+        has_differences=has_differences,
+        total_differences=total_differences
     )
 
 @bp.route('/add_solution', methods=['GET', 'POST'])
@@ -649,9 +653,9 @@ def apply_solution(solution_id):
         differences_data, total_differences = storage.get_differences(solution_id)
         
         if not differences_data:
-            flash(f'No differences found for solution {solution_id}. This solution may not have been created through the complete comparison process.', 'warning')
+            flash(f'No differences found for solution {solution_id}. This solution may not have been created through the complete comparison process. Please contact the administrator to regenerate the differences for this solution.', 'warning')
             logger.warning(f"No differences found for solution {solution_id}")
-            return redirect(url_for('main.solutions'))
+            return redirect(url_for('main.modify_file'))
         
         # Convertir formato de diferencias
         differences = []
@@ -720,11 +724,109 @@ def apply_solution(solution_id):
             except Exception as e:
                 logger.warning(f"Error cleaning up temp files: {e}")
                 
-        return redirect(url_for('main.solutions'))
+        return redirect(url_for('main.modify_file'))
     except Exception as e:
         logger.error(f"Error applying solution: {e}")
         flash(f'Error applying solution: {str(e)}', 'danger')
-        return redirect(url_for('main.solutions'))
+        return redirect(url_for('main.modify_file'))
+
+@bp.route('/solutions/<int:solution_id>/regenerate_differences', methods=['GET', 'POST'])
+@login_required  
+def regenerate_differences(solution_id):
+    """Regenerate differences for a solution that doesn't have them."""
+    with DatabaseManager() as db:
+        # Verificar que la solución existe
+        solutions = db.search_solutions({'id': solution_id})
+        if not solutions:
+            flash('Solution not found', 'danger')
+            return redirect(url_for('main.solutions'))
+        
+        solution = solutions[0]
+        
+        # Verificar si ya tiene diferencias
+        storage = get_file_storage()
+        differences_data, total_differences = storage.get_differences(solution_id)
+        
+        if differences_data:
+            flash(f'Solution {solution_id} already has {total_differences} differences', 'info')
+            return redirect(url_for('main.solution_detail', solution_id=solution_id))
+    
+    if request.method == 'POST':
+        if 'ori1_file' not in request.files or 'mod1_file' not in request.files:
+            flash('Both ORI1 and MOD1 files are required', 'danger')
+            return render_template('main/regenerate_differences.html', solution=solution)
+        
+        ori1_file = request.files['ori1_file']
+        mod1_file = request.files['mod1_file']
+        bit_size = int(request.form.get('bit_size', 8))
+        
+        if ori1_file.filename == '' or mod1_file.filename == '':
+            flash('Both files must be selected', 'danger')
+            return render_template('main/regenerate_differences.html', solution=solution)
+        
+        if not (allowed_file(ori1_file.filename) and allowed_file(mod1_file.filename)):
+            flash('Invalid file type. Only .bin, .ori, .mod files are allowed', 'danger')
+            return render_template('main/regenerate_differences.html', solution=solution)
+        
+        try:
+            # Crear archivos temporales
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.ori', delete=False) as ori1_temp:
+                ori1_file.save(ori1_temp.name)
+                ori1_temp_path = ori1_temp.name
+            
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.mod', delete=False) as mod1_temp:
+                mod1_file.save(mod1_temp.name)
+                mod1_temp_path = mod1_temp.name
+            
+            try:
+                # Comparar archivos
+                binary_handler = BinaryHandler()
+                binary_handler.set_read_size(bit_size)
+                
+                ori1_data = binary_handler.read_file(ori1_temp_path)
+                mod1_data = binary_handler.read_file(mod1_temp_path)
+                
+                if len(ori1_data) != len(mod1_data):
+                    flash('Files have different sizes and cannot be compared', 'danger')
+                    return render_template('main/regenerate_differences.html', solution=solution)
+                
+                differences = binary_handler.compare_files(ori1_data, mod1_data)
+                
+                if not differences:
+                    flash('No differences found between the files', 'warning')
+                    return render_template('main/regenerate_differences.html', solution=solution)
+                
+                # Preparar diferencias para almacenamiento
+                differences_for_storage = []
+                for address, ori1_value, mod1_value in differences:
+                    differences_for_storage.append({
+                        'memory_address': address,
+                        'ori1_value': ori1_value,
+                        'mod1_value': mod1_value,
+                        'bit_size': bit_size
+                    })
+                
+                # Guardar diferencias
+                if storage.store_differences(solution_id, differences_for_storage):
+                    flash(f'Successfully regenerated {len(differences)} differences for solution {solution_id}', 'success')
+                    logger.info(f"Regenerated {len(differences)} differences for solution {solution_id}")
+                    return redirect(url_for('main.solution_detail', solution_id=solution_id))
+                else:
+                    flash('Error storing differences', 'danger')
+                    
+            finally:
+                # Limpiar archivos temporales
+                try:
+                    os.unlink(ori1_temp_path)
+                    os.unlink(mod1_temp_path)
+                except Exception as e:
+                    logger.warning(f"Error cleaning up temp files: {e}")
+                    
+        except Exception as e:
+            logger.error(f"Error regenerating differences: {e}")
+            flash(f'Error processing files: {str(e)}', 'danger')
+    
+    return render_template('main/regenerate_differences.html', solution=solution)
 
 @bp.route('/download/mod2')
 @login_required

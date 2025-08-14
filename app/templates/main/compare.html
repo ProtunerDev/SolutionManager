@@ -7,6 +7,7 @@
     <div class="card-body">
         {% if session.files and 'ori1' in session.files and 'mod1' in session.files %}
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="mb-3">
                 <label for="bitSize" class="form-label">Bit Size</label>
                 <select class="form-select" id="bitSize" name="bit_size">

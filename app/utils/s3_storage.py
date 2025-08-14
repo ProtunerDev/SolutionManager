@@ -228,6 +228,7 @@ class S3FileStorage:
             solution_id = int(solution_id)
             
             s3_key = f"solutions/{solution_id}/differences/differences.json"
+            logger.info(f"Storing {len(differences_list)} differences for solution {solution_id} to S3 key: {s3_key}")
             
             differences_data = {
                 'solution_id': solution_id,
@@ -250,8 +251,17 @@ class S3FileStorage:
                 }
             )
             
+            logger.info(f"Successfully stored differences in S3 for solution {solution_id}")
+            
             # Guardar metadatos en PostgreSQL
             self._save_differences_metadata(solution_id, len(differences_list), s3_key)
+            
+            logger.info(f"Differences storage completed for solution {solution_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error storing differences: {e}")
+            return False
             
             logger.info(f"Differences stored in S3: {s3_key}")
             return True
@@ -310,6 +320,19 @@ class S3FileStorage:
             solution_id = int(solution_id)
             
             s3_key = f"solutions/{solution_id}/differences/differences.json"
+            logger.info(f"Attempting to get differences for solution {solution_id} from S3 key: {s3_key}")
+            
+            # Verificar si el objeto existe
+            try:
+                self.s3_client.head_object(Bucket=self.bucket_name, Key=s3_key)
+                logger.info(f"Differences file found in S3 for solution {solution_id}")
+            except ClientError as e:
+                if e.response['Error']['Code'] == '404':
+                    logger.warning(f"Differences file not found in S3 for solution {solution_id}")
+                    return None, 0
+                else:
+                    logger.error(f"Error checking differences file existence: {e}")
+                    return None, 0
             
             # Descargar desde S3
             response = self.s3_client.get_object(
@@ -320,6 +343,7 @@ class S3FileStorage:
             json_data = response['Body'].read().decode('utf-8')
             differences_data = json.loads(json_data)
             
+            logger.info(f"Successfully retrieved {differences_data['total_differences']} differences for solution {solution_id}")
             return differences_data['differences'], differences_data['total_differences']
             
         except Exception as e:

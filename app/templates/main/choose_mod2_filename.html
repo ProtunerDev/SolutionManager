@@ -3,6 +3,7 @@
 <div class="container mt-4">
     <h3>Download MOD2 File</h3>
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="mb-3">
             <label for="mod2_filename" class="form-label">MOD2 File Name</label>
             <input type="text" class="form-control" id="mod2_filename" name="mod2_filename" value="mod2.mod" required>

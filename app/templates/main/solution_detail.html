@@ -4,12 +4,32 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3>Solution #{{ solution.id }}</h3>
         <div>
-            <a href="{{ url_for('main.apply_solution', solution_id=solution.id) }}" class="btn btn-success">Apply Solution</a>
+            {% if has_differences %}
+                <a href="{{ url_for('main.apply_solution', solution_id=solution.id) }}" class="btn btn-success">Apply Solution</a>
+            {% else %}
+                <a href="{{ url_for('main.regenerate_differences', solution_id=solution.id) }}" class="btn btn-warning">
+                    <i class="fas fa-sync-alt"></i> Regenerate Differences
+                </a>
+            {% endif %}
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete</button>
         </div>
     </div>
     <div class="card-body">
+        {% if not has_differences %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Warning:</strong> This solution has no differences data stored. 
+            You need to <a href="{{ url_for('main.regenerate_differences', solution_id=solution.id) }}" class="alert-link">regenerate the differences</a> 
+            before you can apply this solution to other files.
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <strong>Ready:</strong> This solution has {{ total_differences }} differences and is ready to be applied.
+        </div>
+        {% endif %}
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
@@ -217,6 +237,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form action="{{ url_for('main.delete_solution', solution_id=solution.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>

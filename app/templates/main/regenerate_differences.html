@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>Regenerate Differences for Solution #{{ solution.id }}</h3>
+            <p class="text-muted mb-0">Upload the original ORI1 and MOD1 files to regenerate the differences for this solution.</p>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> This solution currently has no differences stored. 
+                You need to upload the original ORI1 and MOD1 files that were used to create this solution 
+                to regenerate the differences data.
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Solution Details:</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Vehicle:</strong> {{ solution.vehicle_type }} {{ solution.make }} {{ solution.model }}</li>
+                        <li><strong>Engine:</strong> {{ solution.engine }}</li>
+                        <li><strong>Year:</strong> {{ solution.year }}</li>
+                        <li><strong>ECU Type:</strong> {{ solution.ecu_type }}</li>
+                        <li><strong>Hardware:</strong> {{ solution.hardware_number }}</li>
+                        <li><strong>Software:</strong> {{ solution.software_number }} ({{ solution.software_update_number }})</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>Solution Types:</h5>
+                    <div class="solution-types">
+                        {% if solution.stage_1 %}<span class="badge bg-primary">Stage 1</span>{% endif %}
+                        {% if solution.stage_2 %}<span class="badge bg-primary">Stage 2</span>{% endif %}
+                        {% if solution.pop_and_bangs %}<span class="badge bg-warning">Pop and Bangs</span>{% endif %}
+                        {% if solution.vmax %}<span class="badge bg-info">Vmax</span>{% endif %}
+                        {% if solution.dtc_off %}<span class="badge bg-secondary">DTC Off</span>{% endif %}
+                        {% if solution.full_decat %}<span class="badge bg-danger">Full Decat</span>{% endif %}
+                        {% if solution.immo_off %}<span class="badge bg-dark">Immo Off</span>{% endif %}
+                        {% if solution.evap_off %}<span class="badge bg-secondary">Evap Off</span>{% endif %}
+                        {% if solution.tva %}<span class="badge bg-success">TVA</span>{% endif %}
+                        {% if solution.egr_off %}<span class="badge bg-warning">EGR Off</span>{% endif %}
+                        {% if solution.dpf_off %}<span class="badge bg-danger">DPF Off</span>{% endif %}
+                        {% if solution.egr_dpf_off %}<span class="badge bg-danger">EGR + DPF Off</span>{% endif %}
+                        {% if solution.adblue_off %}<span class="badge bg-info">AdBlue Off</span>{% endif %}
+                        {% if solution.egr_dpf_adblue_off %}<span class="badge bg-danger">EGR + DPF + AdBlue Off</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="ori1_file" class="form-label">
+                                <i class="fas fa-file-upload"></i> Original ORI1 File
+                            </label>
+                            <input class="form-control" type="file" id="ori1_file" name="ori1_file" 
+                                   accept=".ori,.mod,.bin" required>
+                            <div class="form-text">The original stock/ORI1 file used for this solution</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="mod1_file" class="form-label">
+                                <i class="fas fa-file-upload"></i> Modified MOD1 File
+                            </label>
+                            <input class="form-control" type="file" id="mod1_file" name="mod1_file" 
+                                   accept=".ori,.mod,.bin" required>
+                            <div class="form-text">The modified/MOD1 file used for this solution</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="bit_size" class="form-label">Bit Size</label>
+                            <select class="form-select" id="bit_size" name="bit_size" required>
+                                <option value="8" selected>8-bit</option>
+                                <option value="16">16-bit</option>
+                                <option value="32">32-bit</option>
+                            </select>
+                            <div class="form-text">Choose the bit size used for the original comparison</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Make sure you upload the exact same files that were originally used to create this solution. 
+                    The files will be compared to generate the differences data needed for applying this solution to other files.
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Solution
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Regenerate Differences
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.solution-types .badge {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+</style>
+{% endblock %}

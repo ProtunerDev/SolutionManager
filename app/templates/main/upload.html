@@ -11,6 +11,7 @@
                     <div class="card-header">ORI1 File</div>
                     <div class="card-body">
                         <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <input type="hidden" name="file_type" value="ori1">
                             <div class="mb-3">
                                 <label for="ori1File" class="form-label">Select ORI1 File</label>
@@ -31,6 +32,7 @@
                     <div class="card-header">MOD1 File</div>
                     <div class="card-body">
                         <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <input type="hidden" name="file_type" value="mod1">
                             <div class="mb-3">
                                 <label for="mod1File" class="form-label">Select MOD1 File</label>
@@ -51,6 +53,7 @@
                     <div class="card-header">ORI2 File</div>
                     <div class="card-body">
                         <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <input type="hidden" name="file_type" value="ori2">
                             <div class="mb-3">
                                 <label for="ori2File" class="form-label">Select ORI2 File</label>
