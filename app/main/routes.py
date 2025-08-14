@@ -933,6 +933,27 @@ def choose_mod2_filename():
         return redirect(url_for('main.download_mod2'))
     return render_template('main/choose_mod2_filename.html')
 
+@bp.route('/debug/config')
+@login_required
+def debug_config():
+    """Debug endpoint to check configuration (admin only)"""
+    if not current_user.is_admin:
+        flash('Access denied', 'danger')
+        return redirect(url_for('main.home'))
+    
+    config_info = {
+        'DB_HOST': current_app.config.get('DB_HOST', 'NOT_SET'),
+        'DB_NAME': current_app.config.get('DB_NAME', 'NOT_SET'),
+        'DB_USER': current_app.config.get('DB_USER', 'NOT_SET'),
+        'DB_PORT': current_app.config.get('DB_PORT', 'NOT_SET'),
+        'STORAGE_TYPE': current_app.config.get('STORAGE_TYPE', 'NOT_SET'),
+        'SECRET_KEY_SET': 'YES' if current_app.config.get('SECRET_KEY') else 'NO',
+        'SUPABASE_URL_SET': 'YES' if current_app.config.get('SUPABASE_URL') else 'NO',
+        'AWS_KEYS_SET': 'YES' if current_app.config.get('AWS_ACCESS_KEY_ID') else 'NO',
+    }
+    
+    return f"<pre>Config Debug:\n{json.dumps(config_info, indent=2)}</pre>"
+
 @bp.route('/s3_status')
 @login_required
 def s3_status():
