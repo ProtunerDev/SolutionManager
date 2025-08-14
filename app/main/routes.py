@@ -397,94 +397,106 @@ def add_solution():
     GET: Display add solution form with file upload functionality
     POST: Process add solution request
     """
-    if request.method == 'POST':
-        if 'differences_file' not in session:
-            flash('Please upload and compare ORI1 and MOD1 files first', 'warning')
-            return redirect(url_for('main.add_solution'))
+    logger.info("=== ADD_SOLUTION ROUTE CALLED ===")
+    try:
+        if request.method == 'POST':
+            logger.info("Processing POST request for add_solution")
+            if 'differences_file' not in session:
+                flash('Please upload and compare ORI1 and MOD1 files first', 'warning')
+                return redirect(url_for('main.add_solution'))
 
-        filename = session['differences_file']
-        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        try:
-            with open(filepath, 'r') as f:
-                differences = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            flash('Comparison data is missing or corrupted. Please re-compare files.', 'danger')
-            session.pop('differences_file', None)
-            return redirect(url_for('main.add_solution'))
+            filename = session['differences_file']
+            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            try:
+                with open(filepath, 'r') as f:
+                    differences = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                flash('Comparison data is missing or corrupted. Please re-compare files.', 'danger')
+                session.pop('differences_file', None)
+                return redirect(url_for('main.add_solution'))
 
-        vehicle_info = {
-            'vehicle_type': request.form.get('vehicle_type'),
-            'make': request.form.get('make'),
-            'model': request.form.get('model'),
-            'engine': request.form.get('engine'),
-            'year': request.form.get('year'),
-            'ecu_type': request.form.get('ecu_type', ''),  # Optional
-            'hardware_number': request.form.get('hardware_number'),
-            'software_number': request.form.get('software_number'),
-            'software_update_number': request.form.get('software_update_number', ''),  # Optional
-            'transmission_type': request.form.get('transmission_type')
-        }
-        
-        solution_types = {
-            'stage_1': 'stage_1' in request.form,
-            'stage_2': 'stage_2' in request.form,
-            'pop_and_bangs': 'pop_and_bangs' in request.form,
-            'vmax': 'vmax' in request.form,
-            'dtc_off': 'dtc_off' in request.form,
-            'full_decat': 'full_decat' in request.form,
-            'immo_off': 'immo_off' in request.form,
-            'evap_off': 'evap_off' in request.form,
-            'tva': 'tva' in request.form,
-            'egr_off': 'egr_off' in request.form,
-            'dpf_off': 'dpf_off' in request.form,
-            'egr_dpf_off': 'egr_dpf_off' in request.form,
-            'adblue_off': 'adblue_off' in request.form,
-            'egr_dpf_adblue_off': 'egr_dpf_adblue_off' in request.form,
-            'description': request.form.get('description', '')
-        }
-        
-        with DatabaseManager() as db:
-            solution_id = db.add_solution(vehicle_info, solution_types)
+            vehicle_info = {
+                'vehicle_type': request.form.get('vehicle_type'),
+                'make': request.form.get('make'),
+                'model': request.form.get('model'),
+                'engine': request.form.get('engine'),
+                'year': request.form.get('year'),
+                'ecu_type': request.form.get('ecu_type', ''),  # Optional
+                'hardware_number': request.form.get('hardware_number'),
+                'software_number': request.form.get('software_number'),
+                'software_update_number': request.form.get('software_update_number', ''),  # Optional
+                'transmission_type': request.form.get('transmission_type')
+            }
             
-            if solution_id:
-                bit_size = session.get('bit_size', 8)
+            solution_types = {
+                'stage_1': 'stage_1' in request.form,
+                'stage_2': 'stage_2' in request.form,
+                'pop_and_bangs': 'pop_and_bangs' in request.form,
+                'vmax': 'vmax' in request.form,
+                'dtc_off': 'dtc_off' in request.form,
+                'full_decat': 'full_decat' in request.form,
+                'immo_off': 'immo_off' in request.form,
+                'evap_off': 'evap_off' in request.form,
+                'tva': 'tva' in request.form,
+                'egr_off': 'egr_off' in request.form,
+                'dpf_off': 'dpf_off' in request.form,
+                'egr_dpf_off': 'egr_dpf_off' in request.form,
+                'adblue_off': 'adblue_off' in request.form,
+                'egr_dpf_adblue_off': 'egr_dpf_adblue_off' in request.form,
+                'description': request.form.get('description', '')
+            }
+            
+            with DatabaseManager() as db:
+                solution_id = db.add_solution(vehicle_info, solution_types)
                 
-                # Preparar diferencias para S3 storage
-                differences_for_storage = []
-                for address, ori1_value, mod1_value in differences:
-                    differences_for_storage.append({
-                        'memory_address': address,
-                        'ori1_value': ori1_value,
-                        'mod1_value': mod1_value,
-                        'bit_size': bit_size
-                    })
-                
-                # Guardar diferencias en S3
-                storage = get_file_storage()
-                if storage.store_differences(solution_id, differences_for_storage):
-                    logger.info(f"Differences stored in S3 for solution {solution_id}")
-                else:
-                    logger.error(f"Failed to store differences in S3 for solution {solution_id}")
+                if solution_id:
+                    bit_size = session.get('bit_size', 8)
+                    
+                    # Preparar diferencias para S3 storage
+                    differences_for_storage = []
+                    for address, ori1_value, mod1_value in differences:
+                        differences_for_storage.append({
+                            'memory_address': address,
+                            'ori1_value': ori1_value,
+                            'mod1_value': mod1_value,
+                            'bit_size': bit_size
+                        })
+                    
+                    # Guardar diferencias en S3
+                    storage = get_file_storage()
+                    if storage.store_differences(solution_id, differences_for_storage):
+                        logger.info(f"Differences stored in S3 for solution {solution_id}")
+                    else:
+                        logger.error(f"Failed to store differences in S3 for solution {solution_id}")
 
-                flash('Solution added successfully', 'success')
-                # Clean up uploaded files and related session data
-                session.pop('files', None)
-                session.pop('ori2_base_name', None)
-                session.pop('differences_file', None)  # Limpiar archivo temporal
-                session.modified = True
-                return redirect(url_for('main.solution_detail', solution_id=solution_id))
-            else:
-                flash('Error adding solution', 'danger')
-    
-    with DatabaseManager() as db:
-        vehicle_types = db.get_field_values('vehicle_type')
-    
-    return render_template(
-        'main/add_solution.html',
-        title='Add Solution',
-        vehicle_types=vehicle_types,
-        search_performed=False
-    )
+                    flash('Solution added successfully', 'success')
+                    # Clean up uploaded files and related session data
+                    session.pop('files', None)
+                    session.pop('ori2_base_name', None)
+                    session.pop('differences_file', None)  # Limpiar archivo temporal
+                    session.modified = True
+                    return redirect(url_for('main.solution_detail', solution_id=solution_id))
+                else:
+                    flash('Error adding solution', 'danger')
+        
+        logger.info("Getting vehicle types from database")
+        with DatabaseManager() as db:
+            vehicle_types = db.get_field_values('vehicle_type')
+            logger.info(f"Found {len(vehicle_types)} vehicle types")
+        
+        logger.info("Rendering add_solution.html template")
+        return render_template(
+            'main/add_solution.html',
+            title='Add Solution',
+            vehicle_types=vehicle_types,
+            search_performed=False
+        )
+    except Exception as e:
+        logger.error(f"Error in add_solution route: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        flash(f'An error occurred: {str(e)}', 'danger')
+        return redirect(url_for('main.home'))
 
 @bp.route('/solutions/edit/<int:solution_id>', methods=['GET', 'POST'])
 @login_required
