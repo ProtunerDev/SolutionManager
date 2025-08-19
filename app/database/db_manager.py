@@ -475,7 +475,10 @@ class DatabaseManager:
 
         try:
             query = '''
-                SELECT v.*, st.stage_1, st.stage_2, st.pop_and_bangs, st.vmax,
+                SELECT s.id, v.vehicle_type, v.make, v.model, v.engine, v.year,
+                       v.hardware_number, v.software_number, v.software_update_number,
+                       v.ecu_type, v.transmission_type, v.created_at, v.updated_at,
+                       st.stage_1, st.stage_2, st.pop_and_bangs, st.vmax,
                        st.dtc_off, st.full_decat, st.immo_off, st.evap_off, st.tva,
                        st.egr_off, st.dpf_off, st.egr_dpf_off, st.adblue_off,
                        st.egr_dpf_adblue_off, st.description
@@ -487,7 +490,10 @@ class DatabaseManager:
             params = []
             if filters:
                 for field, value in filters.items():
-                    if field in ['stage_1', 'stage_2', 'pop_and_bangs', 'vmax',
+                    if field == 'id':
+                        # ID filter should match solutions.id, not vehicle_info.id
+                        query += " AND s.id = %s"
+                    elif field in ['stage_1', 'stage_2', 'pop_and_bangs', 'vmax',
                                'dtc_off', 'full_decat', 'immo_off', 'evap_off', 'tva',
                                'egr_off', 'dpf_off', 'egr_dpf_off', 'adblue_off',
                                'egr_dpf_adblue_off']:
@@ -620,7 +626,7 @@ class DatabaseManager:
             return None
 
         try:
-            self.cursor.execute("SELECT * FROM vehicle_info WHERE id = %s", (solution_id,))
+            self.cursor.execute("SELECT * FROM solutions WHERE id = %s", (solution_id,))
             result = self.cursor.fetchone()
             return dict(result) if result else None
         except Exception as e:
@@ -642,9 +648,23 @@ class DatabaseManager:
             return False
 
         try:
-            self.cursor.execute("DELETE FROM vehicle_info WHERE id = %s", (solution_id,))
+            # First get the vehicle_info_id to delete it too
+            self.cursor.execute("SELECT vehicle_info_id FROM solutions WHERE id = %s", (solution_id,))
+            result = self.cursor.fetchone()
+            if not result:
+                logger.warning(f"Solution {solution_id} not found")
+                return False
+            
+            vehicle_info_id = result[0]
+            
+            # Delete from solutions table first (will cascade to solution_types, file_metadata, differences_metadata)
+            self.cursor.execute("DELETE FROM solutions WHERE id = %s", (solution_id,))
+            
+            # Then delete the vehicle_info record
+            self.cursor.execute("DELETE FROM vehicle_info WHERE id = %s", (vehicle_info_id,))
+            
             self.conn.commit()
-            logger.debug(f"Deleted solution with ID: {solution_id}")
+            logger.debug(f"Deleted solution with ID: {solution_id} and vehicle_info with ID: {vehicle_info_id}")
             return True
         except Exception as e:
             logger.error(f"Error deleting solution: {e}")
