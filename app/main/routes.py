@@ -633,23 +633,38 @@ def delete_solution_from_home_ajax():
         if not solution_id:
             return jsonify({'success': False, 'message': 'Solution ID is required'})
         
+        # Verificar que la solución existe antes de intentar eliminarla
+        with DatabaseManager() as db:
+            if not db.get_solution_by_id(solution_id):
+                logger.warning(f"Solution {solution_id} not found in database")
+                return jsonify({'success': False, 'message': 'Solution not found'})
+        
         # Eliminar archivos de S3
         storage = get_file_storage()
         logger.info(f"Deleting S3 files for solution {solution_id}")
-        storage.delete_solution_files(solution_id)
+        try:
+            storage.delete_solution_files(solution_id)
+            logger.info(f"Successfully deleted S3 files for solution {solution_id}")
+        except Exception as e:
+            logger.warning(f"Failed to delete S3 files for solution {solution_id}: {e}")
+            # Continue with database deletion even if S3 deletion fails
         
         # Eliminar de la base de datos
         with DatabaseManager() as db:
             logger.info(f"Deleting solution {solution_id} from database")
             if db.delete_solution(solution_id):
                 logger.info(f"Successfully deleted solution {solution_id}")
-                return jsonify({'success': True, 'message': 'Solution deleted successfully'})
+                return jsonify({
+                    'success': True, 
+                    'message': 'Solution deleted successfully',
+                    'solution_id': solution_id
+                })
             else:
                 logger.error(f"Failed to delete solution {solution_id} from database")
                 return jsonify({'success': False, 'message': 'Error deleting solution from database'})
     except Exception as e:
         logger.error(f"Error deleting solution via AJAX: {e}")
-        return jsonify({'success': False, 'message': 'Error deleting solution'})
+        return jsonify({'success': False, 'message': f'Error deleting solution: {str(e)}'})
 
 @bp.route('/solutions/apply/<int:solution_id>', methods=['POST'])
 @login_required

@@ -605,6 +605,28 @@ class DatabaseManager:
             self.conn.rollback()
             return False
 
+    def get_solution_by_id(self, solution_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get a solution by its ID.
+
+        Args:
+            solution_id: ID of solution to retrieve
+
+        Returns:
+            Dict containing solution data if found, None otherwise
+        """
+        if not self.conn or not self.cursor:
+            logger.error("Cannot get solution: No active connection")
+            return None
+
+        try:
+            self.cursor.execute("SELECT * FROM vehicle_info WHERE id = %s", (solution_id,))
+            result = self.cursor.fetchone()
+            return dict(result) if result else None
+        except Exception as e:
+            logger.error(f"Error getting solution by ID {solution_id}: {e}")
+            return None
+
     def delete_solution(self, solution_id: int) -> bool:
         """
         Delete a solution from the database.
