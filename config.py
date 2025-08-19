@@ -1,8 +1,12 @@
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno desde .env
-load_dotenv()
+# Determinar qué archivo .env cargar basado en FLASK_ENV
+flask_env = os.environ.get('FLASK_ENV', 'development')
+if flask_env == 'production':
+    load_dotenv('.env.production')
+else:
+    load_dotenv('.env')
 
 class Config:
     # Flask

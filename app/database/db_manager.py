@@ -55,15 +55,6 @@ class DatabaseManager:
             "user": current_app.config.get('DB_USER', 'postgres'),
             "password": current_app.config.get('DB_PASSWORD', 'Jmadriz63')
         }
-        
-        # Add detailed logging for debugging
-        logger.info(f"DatabaseManager initialized with parameters:")
-        logger.info(f"  Host: {self.db_params['host']}")
-        logger.info(f"  Port: {self.db_params['port']}")
-        logger.info(f"  Database: {self.db_params['database']}")
-        logger.info(f"  User: {self.db_params['user']}")
-        logger.info(f"  Password: {'*' * len(str(self.db_params['password'])) if self.db_params['password'] else 'None'}")
-        
         logger.debug(f"DatabaseManager initialized with connection to PostgreSQL database: {self.db_params['database']}")
         self.conn = None
         self.cursor = None
