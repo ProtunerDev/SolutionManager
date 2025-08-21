@@ -448,6 +448,7 @@ class SupabaseUser(UserMixin):
         """ID del usuario para Flask-Login"""
         return str(self.id)
     
+    @property
     def is_admin(self):
         """Verificar si es administrador"""
         return self.role == 'admin'

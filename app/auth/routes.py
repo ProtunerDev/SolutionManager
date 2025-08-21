@@ -164,8 +164,19 @@ def invite_user():
             # Determinar rol (admin por defecto si es el primer usuario)
             user_role = form.role.data if hasattr(form, 'role') and form.role.data else 'user'
             
+            logger.info(f"Attempting to create user: {form.email.data} with role: {user_role}")
+            
+            # Verificar si el usuario ya existe
+            try:
+                existing_user = supabase.auth.admin.get_user_by_email(form.email.data)
+                if existing_user and existing_user.user:
+                    flash(f'El usuario {form.email.data} ya existe.', 'warning')
+                    return render_template('auth/invite_user.html', form=form)
+            except Exception as check_error:
+                logger.info(f"User check completed (not found or error): {check_error}")
+            
             # Crear usuario en Supabase con metadata
-            response = supabase.auth.admin.create_user({
+            create_user_data = {
                 "email": form.email.data,
                 "password": form.password.data,
                 "email_confirm": True,
@@ -174,20 +185,38 @@ def invite_user():
                 },
                 "user_metadata": {
                     "is_admin": user_role == 'admin',
-                    "invited_by": current_user.email
+                    "invited_by": current_user.email,
+                    "created_via": "admin_panel"
                 }
-            })
+            }
+            
+            logger.info(f"Creating user with data: {create_user_data}")
+            response = supabase.auth.admin.create_user(create_user_data)
             
             if response.user:
-                flash(f'Usuario {form.email.data} invitado exitosamente con rol {user_role}.', 'success')
-                logger.info(f"User invited successfully: {form.email.data} with role {user_role}")
-                return redirect(url_for('main.index'))
+                flash(f'Usuario {form.email.data} creado exitosamente con rol {user_role}.', 'success')
+                logger.info(f"User created successfully: {form.email.data} with role {user_role}, user_id: {response.user.id}")
+                return redirect(url_for('auth.manage_users'))
             else:
-                flash('Error al crear el usuario. Verifique los datos.', 'error')
+                error_msg = "No se pudo crear el usuario. Respuesta vacía de Supabase."
+                flash(error_msg, 'error')
+                logger.error(f"Create user failed: {error_msg}")
                 
         except Exception as e:
-            logger.error(f"Error creating user {form.email.data}: {e}")
-            flash(f'Error al crear el usuario: {str(e)}', 'error')
+            error_details = str(e)
+            logger.error(f"Error creating user {form.email.data}: {error_details}")
+            
+            # Determinar el tipo de error para dar mejor feedback
+            if "not allowed" in error_details.lower():
+                flash(f'Error: El dominio de email {form.email.data} no está permitido en la configuración de Supabase. Contacta al administrador del sistema.', 'error')
+            elif "already exists" in error_details.lower():
+                flash(f'El usuario {form.email.data} ya existe.', 'warning')
+            elif "invalid email" in error_details.lower():
+                flash(f'El email {form.email.data} no es válido.', 'error')
+            elif "password" in error_details.lower():
+                flash(f'Error con la contraseña. Debe tener al menos 6 caracteres.', 'error')
+            else:
+                flash(f'Error al crear el usuario: {error_details}', 'error')
     
     return render_template('auth/invite_user.html', form=form)
 
