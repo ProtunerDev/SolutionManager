@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user"></i> My Profile
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Email</h6>
+                            <p class="lead">{{ user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Username</h6>
+                            <p class="lead">{{ user.username }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if user.full_name %}
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Full Name</h6>
+                            <p class="lead">{{ user.full_name }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Member Since</h6>
+                            <p class="lead">
+                                {% if user.created_at %}
+                                    {{ moment(user.created_at).format('MMMM DD, YYYY') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Last Sign In</h6>
+                            <p class="lead">
+                                {% if user.last_sign_in_at %}
+                                    {{ moment(user.last_sign_in_at).fromNow() }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        User management is handled by Supabase. Contact your administrator for account changes.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,14 +1,14 @@
 """
-Authentication Forms Module
+Authentication Forms Module (Simplified)
 
 This module provides form classes for user authentication including:
 - Email/password login form
 - Password reset form  
-- User invitation form (admin)
+- NO user invitation form (users managed in Supabase directly)
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 
 class LoginForm(FlaskForm):
@@ -43,23 +43,3 @@ class ResetPasswordForm(FlaskForm):
         EqualTo('password', message='Passwords must match.')
     ])
     submit = SubmitField('Update Password')
-
-class InviteUserForm(FlaskForm):
-    """Formulario para invitar usuarios (admin only)"""
-    email = StringField('Email', validators=[
-        DataRequired(),
-        Email(message='Please enter a valid email address.')
-    ])
-    password = PasswordField('Temporary Password', validators=[
-        DataRequired(),
-        Length(min=6, message='Password must be at least 6 characters long.')
-    ])
-    role = SelectField('Role', choices=[
-        ('user', 'User'),
-        ('admin', 'Administrator')
-    ], default='user', validators=[DataRequired()])
-    submit = SubmitField('Create User')
-
-# ❌ ELIMINAR: Ya no necesitamos estas clases
-# - MagicLinkForm 
-# - VerifyTokenForm

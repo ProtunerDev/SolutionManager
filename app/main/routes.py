@@ -567,11 +567,6 @@ def edit_solution(solution_id):
 @login_required
 def delete_solution(solution_id):
     """Delete solution route."""
-    # Permitir eliminar soluciones solo si es admin
-    if not current_user.is_admin:
-        flash('No tienes permisos para eliminar soluciones.', 'danger')
-        return redirect(url_for('main.solutions'))
-    
     try:
         # Eliminar archivos de S3
         storage = get_file_storage()
@@ -592,11 +587,7 @@ def delete_solution(solution_id):
 @bp.route('/solutions/delete_from_home/<int:solution_id>', methods=['POST'])
 @login_required
 def delete_solution_from_home(solution_id):
-    """Delete solution from home/recent solutions (admin only)."""
-    if not current_user.is_admin:
-        flash('No tienes permisos para eliminar soluciones.', 'danger')
-        return redirect(url_for('main.home'))
-    
+    """Delete solution from home/recent solutions."""
     try:
         # Eliminar archivos de S3
         storage = get_file_storage()
@@ -617,12 +608,8 @@ def delete_solution_from_home(solution_id):
 @bp.route('/delete_solution_from_home', methods=['POST'])
 @login_required
 def delete_solution_from_home_ajax():
-    """Delete solution from home/recent solutions via AJAX (admin only)."""
-    logger.info(f"Delete solution request from user: {current_user.email}, is_admin: {current_user.is_admin}")
-    
-    if not current_user.is_admin:
-        logger.warning(f"User {current_user.email} attempted to delete solution without admin rights")
-        return jsonify({'success': False, 'message': 'No tienes permisos para eliminar soluciones.'})
+    """Delete solution from home/recent solutions via AJAX."""
+    logger.info(f"Delete solution request from user: {current_user.email}")
     
     try:
         data = request.get_json()
@@ -951,11 +938,7 @@ def choose_mod2_filename():
 @bp.route('/debug/config')
 @login_required
 def debug_config():
-    """Debug endpoint to check configuration (admin only)"""
-    if not current_user.is_admin:
-        flash('Access denied', 'danger')
-        return redirect(url_for('main.home'))
-    
+    """Debug endpoint to check configuration"""
     config_info = {
         'DB_HOST': current_app.config.get('DB_HOST', 'NOT_SET'),
         'DB_NAME': current_app.config.get('DB_NAME', 'NOT_SET'),
@@ -972,11 +955,7 @@ def debug_config():
 @bp.route('/s3_status')
 @login_required
 def s3_status():
-    """Verificar estado de conectividad S3 (solo admin)"""
-    if not current_user.is_admin:
-        flash('No tienes permisos para acceder al estado de S3.', 'error')
-        return redirect(url_for('main.index'))
-    
+    """Verificar estado de conectividad S3"""
     try:
         storage = get_file_storage()
         

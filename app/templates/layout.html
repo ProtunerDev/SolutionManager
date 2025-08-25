@@ -57,23 +57,12 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user"></i> {{ current_user.username }}
-                            {% if current_user.is_admin %}
-                                <span class="badge bg-warning ms-1">Admin</span>
-                            {% endif %}
                         </a>
                         <ul class="dropdown-menu">
-                            {% if current_user.is_admin %}
-                            <li><a class="dropdown-item" href="{{ url_for('auth.invite_user') }}">
-                                <i class="fas fa-user-plus"></i> Invite Technician
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('auth.manage_users') }}">
-                                <i class="fas fa-users-cog"></i> Manage Users
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.s3_status') }}">
-                                <i class="fab fa-aws"></i> S3 Storage Status
+                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                <i class="fas fa-user"></i> My Profile
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
                                 <i class="fas fa-sign-out-alt"></i> Logout
                             </a></li>
