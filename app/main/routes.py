@@ -674,8 +674,39 @@ def apply_solution(solution_id):
         # Obtener archivo ORI1 de la solución desde S3
         ori1_filename, ori1_file_data = storage.get_file(solution_id, 'ori1')
         if not ori1_file_data:
-            flash('Error retrieving ORI1 file from solution', 'danger')
-            return redirect(url_for('main.modify_file'))
+            # Si no se encuentra ori1, intentar buscar en file_metadata
+            from app.database.db_manager import DatabaseManager
+            db = DatabaseManager()
+            try:
+                ori1_metadata = db.get_file_metadata(solution_id, 'ori1')
+                if ori1_metadata:
+                    # Intentar obtener el archivo usando la clave S3 directa
+                    import boto3
+                    from botocore.exceptions import ClientError
+                    s3_client = boto3.client(
+                        's3',
+                        aws_access_key_id=current_app.config['AWS_ACCESS_KEY_ID'],
+                        aws_secret_access_key=current_app.config['AWS_SECRET_ACCESS_KEY'],
+                        region_name=current_app.config['AWS_S3_REGION']
+                    )
+                    try:
+                        file_response = s3_client.get_object(
+                            Bucket=current_app.config['AWS_S3_BUCKET'],
+                            Key=ori1_metadata['s3_key']
+                        )
+                        ori1_file_data = file_response['Body'].read()
+                        ori1_filename = ori1_metadata['file_name']
+                    except ClientError as e:
+                        logger.error(f"Error accessing ORI1 file from S3: {e}")
+                        flash('Error retrieving ORI1 file from solution storage', 'danger')
+                        return redirect(url_for('main.modify_file'))
+                else:
+                    flash('ORI1 file not found for this solution', 'danger')
+                    return redirect(url_for('main.modify_file'))
+            except Exception as e:
+                logger.error(f"Error retrieving ORI1 metadata: {e}")
+                flash('Error retrieving ORI1 file metadata', 'danger')
+                return redirect(url_for('main.modify_file'))
         
         # Obtener archivo ORI2 desde S3
         ori2_info = session['files']['ori2']

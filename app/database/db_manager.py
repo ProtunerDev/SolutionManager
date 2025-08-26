@@ -674,3 +674,33 @@ class DatabaseManager:
                 except:
                     pass
             return False
+
+    def get_file_metadata(self, solution_id: int, file_type: str) -> Optional[Dict[str, Any]]:
+        """
+        Get file metadata for a specific solution and file type.
+        
+        Args:
+            solution_id: Solution ID
+            file_type: Type of file ('ori1', 'mod1', 'ori2', 'mod2')
+            
+        Returns:
+            Dict with file metadata or None if not found
+        """
+        try:
+            with self.get_connection() as conn:
+                with conn.cursor(cursor_factory=DictCursor) as cursor:
+                    cursor.execute("""
+                        SELECT id, solution_id, file_type, file_name, file_size, 
+                               s3_key, uploaded_at
+                        FROM file_metadata 
+                        WHERE solution_id = %s AND file_type = %s
+                    """, (solution_id, file_type))
+                    
+                    result = cursor.fetchone()
+                    if result:
+                        return dict(result)
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"Error getting file metadata for solution {solution_id}, type {file_type}: {e}")
+            return None
