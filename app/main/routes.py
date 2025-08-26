@@ -710,15 +710,15 @@ def apply_solution(solution_id):
                 'solution_id': solution_id,
                 'compatibility_result': compatibility_result,
                 'solution_info': {
-                    'id': solution.id,
-                    'vehicle_type': solution.vehicle_type,
-                    'make': solution.make,
-                    'model': solution.model,
-                    'engine': solution.engine,
-                    'year': solution.year,
-                    'ecu_type': solution.ecu_type,
-                    'hardware_number': solution.hardware_number,
-                    'software_number': solution.software_number
+                    'id': solution['id'],
+                    'vehicle_type': solution['vehicle_type'],
+                    'make': solution['make'],
+                    'model': solution['model'],
+                    'engine': solution['engine'],
+                    'year': solution['year'],
+                    'ecu_type': solution['ecu_type'],
+                    'hardware_number': solution['hardware_number'],
+                    'software_number': solution['software_number']
                 },
                 'analysis_details': {
                     'total_differences': total_differences,
