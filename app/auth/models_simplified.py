@@ -86,19 +86,11 @@ class SupabaseUser(UserMixin):
                 logger.info(f"✅ User authenticated successfully: {email}")
                 return user
             else:
-                logger.warning(f"❌ Authentication failed for: {email} - No user or session returned")
+                logger.warning(f"❌ Authentication failed for: {email}")
                 return None
                 
         except Exception as e:
-            error_msg = str(e).lower()
-            if 'invalid login credentials' in error_msg:
-                logger.warning(f"❌ Invalid credentials for: {email}")
-            elif 'email not confirmed' in error_msg:
-                logger.warning(f"❌ Email not confirmed for: {email}")
-            elif 'too many requests' in error_msg:
-                logger.warning(f"❌ Too many login attempts for: {email}")
-            else:
-                logger.error(f"❌ Authentication error for {email}: {e}")
+            logger.error(f"❌ Authentication error for {email}: {e}")
             return None
     
     @staticmethod

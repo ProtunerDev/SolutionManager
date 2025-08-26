@@ -211,6 +211,38 @@ class SupabaseAuthClient:
             'user_id': session.get('user_id'),
             'session_keys': list(session.keys())
         }
+    
+    def send_password_reset(self, email):
+        """Enviar email de reset de password"""
+        try:
+            response = self.supabase.auth.reset_password_email(email)
+            logger.info(f"Password reset email sent to: {email}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending password reset to {email}: {e}")
+            return False
+    
+    def reset_password(self, access_token, new_password):
+        """Resetear password usando token de acceso"""
+        try:
+            # Set the session with the access token
+            self.supabase.auth.set_session(access_token, "")
+            
+            # Update the password
+            response = self.supabase.auth.update_user({
+                "password": new_password
+            })
+            
+            if response.user:
+                logger.info("Password reset successfully")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error resetting password: {e}")
+            return False
 
 # Instancia global
 supabase_auth = SupabaseAuthClient()
