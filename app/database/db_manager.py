@@ -613,7 +613,7 @@ class DatabaseManager:
 
     def get_solution_by_id(self, solution_id: int) -> Optional[Dict[str, Any]]:
         """
-        Get a solution by its ID.
+        Get a solution by its ID with vehicle information.
 
         Args:
             solution_id: ID of solution to retrieve
@@ -621,14 +621,25 @@ class DatabaseManager:
         Returns:
             Dict containing solution data if found, None otherwise
         """
-        if not self.conn or not self.cursor:
-            logger.error("Cannot get solution: No active connection")
-            return None
-
         try:
-            self.cursor.execute("SELECT * FROM solutions WHERE id = %s", (solution_id,))
-            result = self.cursor.fetchone()
-            return dict(result) if result else None
+            with self as db:
+                if not db or not db.cursor:
+                    logger.error("Failed to establish database connection")
+                    return None
+
+                db.cursor.execute("""
+                    SELECT s.id, s.description, s.status, s.created_at, s.updated_at,
+                           v.vehicle_type, v.make, v.model, v.engine, v.year,
+                           v.hardware_number, v.software_number, v.software_update_number,
+                           v.ecu_type, v.transmission_type
+                    FROM solutions s
+                    JOIN vehicle_info v ON s.vehicle_info_id = v.id
+                    WHERE s.id = %s
+                """, (solution_id,))
+                
+                result = db.cursor.fetchone()
+                return dict(result) if result else None
+                
         except Exception as e:
             logger.error(f"Error getting solution by ID {solution_id}: {e}")
             return None

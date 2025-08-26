@@ -700,6 +700,11 @@ def apply_solution(solution_id):
             db = DatabaseManager()
             solution = db.get_solution_by_id(solution_id)
             
+            if not solution:
+                logger.error(f"Solution {solution_id} not found in database")
+                flash(f'Solution {solution_id} not found in database', 'danger')
+                return redirect(url_for('main.modify_file'))
+            
             # Guardar datos en sesión para la confirmación
             session['compatibility_check'] = {
                 'solution_id': solution_id,
