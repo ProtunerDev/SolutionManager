@@ -727,6 +727,9 @@ def apply_solution(solution_id):
             }
             session.modified = True
             
+            logger.info(f"Redirecting to compatibility confirmation for solution {solution_id}")
+            logger.info(f"Compatibility result: {compatibility_result['compatibility_percentage']}%")
+            
             # Redirigir a página de confirmación de compatibilidad
             return redirect(url_for('main.confirm_compatibility'))
             
@@ -746,12 +749,17 @@ def apply_solution(solution_id):
 @login_required
 def confirm_compatibility():
     """Show compatibility confirmation page."""
+    logger.info("Accessing confirm_compatibility route")
+    
     if 'compatibility_check' not in session:
+        logger.warning("No compatibility check in progress - redirecting to modify_file")
         flash('No compatibility check in progress', 'warning')
         return redirect(url_for('main.modify_file'))
     
     compatibility_data = session['compatibility_check']
-    return render_template('main/confirm_compatibility.html', 
+    logger.info(f"Rendering compatibility confirmation with {compatibility_data['compatibility_result']['compatibility_percentage']}% compatibility")
+    
+    return render_template('main/confirm_compatibility_test.html', 
                          compatibility_data=compatibility_data)
 
 @bp.route('/solutions/apply_confirmed/<int:solution_id>', methods=['POST'])

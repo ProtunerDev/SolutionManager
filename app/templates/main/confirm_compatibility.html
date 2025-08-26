@@ -40,7 +40,7 @@
                         <div class="progress mt-3" style="height: 20px;">
                             <div class="progress-bar {{ badge_class.replace('bg-', '') }}" 
                                  role="progressbar" 
-                                 style="width: {{ compatibility }}%" 
+                                 style="width: {% if compatibility == 0 %}5{% else %}{{ compatibility }}{% endif %}%" 
                                  aria-valuenow="{{ compatibility }}" 
                                  aria-valuemin="0" 
                                  aria-valuemax="100">

@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white text-center">
+                    <h2>🚨 COMPATIBILITY TEST PAGE 🚨</h2>
+                    <p class="mb-0">This is a test page to verify routing works</p>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h4>✅ Route Working!</h4>
+                        <p>If you can see this page, the routing to confirm_compatibility is working correctly.</p>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h4>📊 Session Data Check</h4>
+                        {% if compatibility_data %}
+                            <p><strong>✅ Session data found!</strong></p>
+                            <ul>
+                                <li><strong>Solution ID:</strong> {{ compatibility_data.solution_id }}</li>
+                                <li><strong>Compatibility:</strong> {{ compatibility_data.compatibility_result.compatibility_percentage }}%</li>
+                                <li><strong>Matching Points:</strong> {{ compatibility_data.compatibility_result.matching_points }}</li>
+                                <li><strong>Total Points:</strong> {{ compatibility_data.compatibility_result.total_points }}</li>
+                            </ul>
+                        {% else %}
+                            <p><strong>❌ No session data found!</strong></p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('main.modify_file') }}" class="btn btn-primary btn-lg">
+                            🔙 Back to Modify File
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
