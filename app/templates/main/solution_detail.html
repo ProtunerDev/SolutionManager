@@ -4,9 +4,9 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3>Solution #{{ solution.id }}</h3>
         <div>
-            {% if has_differences %}
+            {% if has_differences and session.get('files') and session['files'].get('ori2') %}
                 <a href="{{ url_for('main.apply_solution', solution_id=solution.id) }}" class="btn btn-success">Apply Solution</a>
-            {% else %}
+            {% elif not has_differences %}
                 <a href="{{ url_for('main.regenerate_differences', solution_id=solution.id) }}" class="btn btn-warning">
                     <i class="fas fa-sync-alt"></i> Regenerate Differences
                 </a>
@@ -196,30 +196,6 @@
                 <a href="{{ url_for('main.solutions') }}" class="btn btn-secondary">Back to Solutions</a>
             </div>
         </form>
-        
-        <hr class="my-4">
-        
-        <h4>Binary Differences</h4>
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Address</th>
-                        <th>ORI1 Value</th>
-                        <th>MOD1 Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for diff in differences %}
-                    <tr>
-                        <td>0x{{ '%08X' % diff[0] }}</td>
-                        <td>0x{{ '%02X' % diff[1] }}</td>
-                        <td>0x{{ '%02X' % diff[2] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </div>
 </div>
 

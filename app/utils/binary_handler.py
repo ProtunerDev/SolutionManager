@@ -69,7 +69,7 @@ class BinaryHandler:
         Read binary file with specified read size.
 
         Args:
-            file_path: Path to binary file (.bin, .ori, or .mod)
+            file_path: Path to binary file (.bin, .ori, .mod, .dtf, or .DTF)
             read_size: Optional bit size override
 
         Returns:
@@ -80,8 +80,8 @@ class BinaryHandler:
             Exception: If file read fails
         """
         ext = Path(file_path).suffix.lower()
-        if ext not in ['.bin', '.ori', '.mod']:
-            raise ValueError(f"Unsupported file extension: {ext}. Must be .bin, .ori, or .mod")
+        if ext not in ['.bin', '.ori', '.mod', '.dtf']:
+            raise ValueError(f"Unsupported file extension: {ext}. Must be .bin, .ori, .mod, .dtf, or .DTF")
         if read_size:
             self.set_read_size(read_size)
 
@@ -125,7 +125,7 @@ class BinaryHandler:
             max_value = (1 << self.read_size) - 1
 
             ext = Path(file_path).suffix.lower()
-            if ext not in ['.bin', '.ori', '.mod']:
+            if ext not in ['.bin', '.ori', '.mod', '.dtf']:
                 logger.error(f"Unsupported file extension: {ext}")
                 return False
 

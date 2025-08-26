@@ -28,7 +28,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-ALLOWED_EXTENSIONS = {'bin', 'ori', 'mod'}
+ALLOWED_EXTENSIONS = {'bin', 'ori', 'mod', 'dtf'}
 
 def allowed_file(filename):
     """Check if file has an allowed extension."""
@@ -184,7 +184,7 @@ def upload_file():
             logger.error(f"Error during file upload: {e}")
             flash(f'Error uploading file: {str(e)}', 'danger')
     else:
-        flash(f'Invalid file type. Allowed types: .ori, .mod, .bin (got: {file.filename})', 'danger')
+        flash(f'Invalid file type. Allowed types: .ori, .mod, .bin, .dtf, .DTF (got: {file.filename})', 'danger')
     
     return redirect(url_for('main.add_solution'))
 
