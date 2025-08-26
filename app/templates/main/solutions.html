@@ -93,7 +93,7 @@
                         <h5>Solution #{{ solution.id }}</h5>
                         <div>
                             <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" class="btn btn-sm btn-info">View</a>
-                            <a href="{{ url_for('main.apply_solution', solution_id=solution.id) }}" class="btn btn-sm btn-success">Apply</a>
+                            <a href="{{ url_for('main.modify_file', vehicle_type=solution.vehicle_type, make=solution.make, model=solution.model, engine=solution.engine, ecu_type=solution.ecu_type, hardware_number=solution.hardware_number, software_number=solution.software_number, software_update_number=solution.software_update_number, year=solution.year, transmission_type=solution.transmission_type) }}" class="btn btn-sm btn-success">Apply</a>
                         </div>
                     </div>
                     <div class="card-body">
