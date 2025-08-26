@@ -656,7 +656,7 @@ def delete_solution_from_home_ajax():
 @bp.route('/solutions/apply/<int:solution_id>', methods=['POST'])
 @login_required
 def apply_solution(solution_id):
-    """Apply solution to ORI2 file."""
+    """Check similarity and show confirmation before applying solution to ORI2 file."""
     if 'files' not in session or 'ori2' not in session['files']:
         flash('Please upload ORI2 file first', 'warning')
         return redirect(url_for('main.modify_file'))
@@ -669,6 +669,112 @@ def apply_solution(solution_id):
         if not differences_data:
             flash(f'No differences found for solution {solution_id}. This solution may not have been created through the complete comparison process. Please contact the administrator to regenerate the differences for this solution.', 'warning')
             logger.warning(f"No differences found for solution {solution_id}")
+            return redirect(url_for('main.modify_file'))
+        
+        # Obtener archivo ORI1 de la solución desde S3
+        ori1_filename, ori1_file_data = storage.get_file(solution_id, 'ori1')
+        if not ori1_file_data:
+            flash('Error retrieving ORI1 file from solution', 'danger')
+            return redirect(url_for('main.modify_file'))
+        
+        # Obtener archivo ORI2 desde S3
+        ori2_info = session['files']['ori2']
+        ori2_filename, ori2_file_data = storage.get_file(ori2_info['solution_id'], 'ori2')
+        
+        if not ori2_file_data:
+            flash('Error retrieving ORI2 file from storage', 'danger')
+            return redirect(url_for('main.modify_file'))
+        
+        # Crear archivos temporales para comparar
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.ori', delete=False) as ori1_temp:
+            ori1_temp.write(ori1_file_data)
+            ori1_temp_path = ori1_temp.name
+            
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.ori', delete=False) as ori2_temp:
+            ori2_temp.write(ori2_file_data)
+            ori2_temp_path = ori2_temp.name
+        
+        try:
+            # Calcular similitud entre ORI1 y ORI2
+            binary_handler = BinaryHandler()
+            bit_size = differences_data[0]['bit_size'] if differences_data else 8
+            binary_handler.set_read_size(bit_size)
+            
+            ori1_data = binary_handler.read_file(ori1_temp_path)
+            ori2_data = binary_handler.read_file(ori2_temp_path)
+            
+            similarity_result = binary_handler.calculate_similarity(ori1_data, ori2_data)
+            
+            # Obtener información de la solución para mostrar en el modal
+            from app.database.db_manager import DatabaseManager
+            db = DatabaseManager()
+            solution = db.get_solution_by_id(solution_id)
+            
+            # Guardar datos en sesión para la confirmación
+            session['similarity_check'] = {
+                'solution_id': solution_id,
+                'similarity_result': similarity_result,
+                'solution_info': {
+                    'id': solution.id,
+                    'vehicle_type': solution.vehicle_type,
+                    'make': solution.make,
+                    'model': solution.model,
+                    'engine': solution.engine,
+                    'year': solution.year,
+                    'ecu_type': solution.ecu_type,
+                    'hardware_number': solution.hardware_number,
+                    'software_number': solution.software_number
+                }
+            }
+            session.modified = True
+            
+            # Redirigir a página de confirmación de similitud
+            return redirect(url_for('main.confirm_similarity'))
+            
+        finally:
+            # Limpiar archivos temporales
+            try:
+                os.unlink(ori1_temp_path)
+                os.unlink(ori2_temp_path)
+            except Exception as e:
+                logger.warning(f"Error cleaning up temp files: {e}")
+                
+    except Exception as e:
+        logger.error(f"Error checking similarity: {e}")
+        flash(f'Error checking similarity: {str(e)}', 'danger')
+        return redirect(url_for('main.modify_file'))
+
+@bp.route('/solutions/confirm_similarity')
+@login_required
+def confirm_similarity():
+    """Show similarity confirmation page."""
+    if 'similarity_check' not in session:
+        flash('No similarity check in progress', 'warning')
+        return redirect(url_for('main.modify_file'))
+    
+    similarity_data = session['similarity_check']
+    return render_template('main/confirm_similarity.html', 
+                         similarity_data=similarity_data)
+
+@bp.route('/solutions/apply_confirmed/<int:solution_id>', methods=['POST'])
+@login_required
+def apply_solution_confirmed(solution_id):
+    """Apply solution to ORI2 file after similarity confirmation."""
+    if 'files' not in session or 'ori2' not in session['files']:
+        flash('Please upload ORI2 file first', 'warning')
+        return redirect(url_for('main.modify_file'))
+    
+    if 'similarity_check' not in session or session['similarity_check']['solution_id'] != solution_id:
+        flash('Invalid similarity check session', 'warning')
+        return redirect(url_for('main.modify_file'))
+    
+    try:
+        # Obtener diferencias desde S3
+        storage = get_file_storage()
+        differences_data, total_differences = storage.get_differences(solution_id)
+        
+        if not differences_data:
+            flash(f'No differences found for solution {solution_id}', 'warning')
             return redirect(url_for('main.modify_file'))
         
         # Convertir formato de diferencias
@@ -721,7 +827,11 @@ def apply_solution(solution_id):
                     if 'files' not in session:
                         session['files'] = {}
                     session['files']['mod2'] = {'solution_id': ori2_info['solution_id'], 'filename': mod2_filename}
+                    
+                    # Limpiar datos de similitud de la sesión
+                    session.pop('similarity_check', None)
                     session.modified = True
+                    
                     flash('Solution applied successfully', 'success')
                     return redirect(url_for('main.choose_mod2_filename'))
                 else:

@@ -294,3 +294,62 @@ class BinaryHandler:
         except Exception as e:
             logger.error(f"Error writing Mod2 file: {e}")
             return False
+
+    def calculate_similarity(self, file1_data: List[int], file2_data: List[int]) -> Dict[str, Any]:
+        """
+        Calculate similarity percentage between two binary files based on identical bytes.
+
+        Args:
+            file1_data: Data from first file
+            file2_data: Data from second file
+
+        Returns:
+            Dict: Similarity analysis containing:
+                - similarity_percentage (float): Percentage of identical bytes
+                - identical_bytes (int): Number of identical bytes
+                - total_bytes (int): Total bytes compared
+                - size_match (bool): Whether file sizes match
+                - file1_size (int): Size of first file
+                - file2_size (int): Size of second file
+        """
+        try:
+            size1 = len(file1_data)
+            size2 = len(file2_data)
+            size_match = size1 == size2
+            
+            # Compare only up to the smaller file size
+            min_size = min(size1, size2)
+            identical_bytes = 0
+            
+            for i in range(min_size):
+                if file1_data[i] == file2_data[i]:
+                    identical_bytes += 1
+            
+            # Calculate similarity percentage based on the larger file size
+            # This ensures that different file sizes will have lower similarity
+            max_size = max(size1, size2) if size1 != size2 else min_size
+            similarity_percentage = (identical_bytes / max_size) * 100 if max_size > 0 else 0
+            
+            logger.debug(f"Similarity calculation:")
+            logger.debug(f"File1 size: {size1}, File2 size: {size2}")
+            logger.debug(f"Identical bytes: {identical_bytes}/{min_size}")
+            logger.debug(f"Similarity: {similarity_percentage:.2f}%")
+            
+            return {
+                'similarity_percentage': round(similarity_percentage, 2),
+                'identical_bytes': identical_bytes,
+                'total_bytes': min_size,
+                'size_match': size_match,
+                'file1_size': size1,
+                'file2_size': size2
+            }
+        except Exception as e:
+            logger.error(f"Error calculating similarity: {e}")
+            return {
+                'similarity_percentage': 0,
+                'identical_bytes': 0,
+                'total_bytes': 0,
+                'size_match': False,
+                'file1_size': 0,
+                'file2_size': 0
+            }

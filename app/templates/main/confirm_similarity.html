@@ -1,0 +1,218 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>🔍 Similarity Check - Quality Control</h3>
+    </div>
+    <div class="card-body">
+        
+        <!-- Similarity Result -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📊 Similarity Analysis</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        {% set similarity = similarity_data.similarity_result.similarity_percentage %}
+                        {% if similarity >= 90 %}
+                            {% set badge_class = "bg-success" %}
+                            {% set icon = "✅" %}
+                            {% set status = "EXCELLENT MATCH" %}
+                        {% elif similarity >= 70 %}
+                            {% set badge_class = "bg-warning" %}
+                            {% set icon = "⚠️" %}
+                            {% set status = "ACCEPTABLE MATCH" %}
+                        {% else %}
+                            {% set badge_class = "bg-danger" %}
+                            {% set icon = "⚠️" %}
+                            {% set status = "LOW SIMILARITY" %}
+                        {% endif %}
+                        
+                        <h2>
+                            <span class="badge {{ badge_class }} fs-1">
+                                {{ icon }} {{ similarity }}%
+                            </span>
+                        </h2>
+                        <h4 class="mt-3">{{ status }}</h4>
+                        
+                        <div class="progress mt-3" style="height: 20px;">
+                            <div class="progress-bar {{ badge_class.replace('bg-', '') }}" 
+                                 role="progressbar" 
+                                 style="width: {{ similarity }}%" 
+                                 aria-valuenow="{{ similarity }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ similarity }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Information -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>📄 File Comparison Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Identical Bytes:</strong></td>
+                                <td>{{ similarity_data.similarity_result.identical_bytes|number_format }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Bytes Compared:</strong></td>
+                                <td>{{ similarity_data.similarity_result.total_bytes|number_format }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ORI1 File Size:</strong></td>
+                                <td>{{ similarity_data.similarity_result.file1_size|number_format }} bytes</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ORI2 File Size:</strong></td>
+                                <td>{{ similarity_data.similarity_result.file2_size|number_format }} bytes</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Size Match:</strong></td>
+                                <td>
+                                    {% if similarity_data.similarity_result.size_match %}
+                                        <span class="badge bg-success">✅ Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">⚠️ No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>🚗 Solution Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Solution ID:</strong></td>
+                                <td>#{{ similarity_data.solution_info.id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Vehicle:</strong></td>
+                                <td>{{ similarity_data.solution_info.vehicle_type }} {{ similarity_data.solution_info.make }} {{ similarity_data.solution_info.model }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Engine:</strong></td>
+                                <td>{{ similarity_data.solution_info.engine }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Year:</strong></td>
+                                <td>{{ similarity_data.solution_info.year }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ECU Type:</strong></td>
+                                <td>{{ similarity_data.solution_info.ecu_type }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Hardware:</strong></td>
+                                <td>{{ similarity_data.solution_info.hardware_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Software:</strong></td>
+                                <td>{{ similarity_data.solution_info.software_number }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warning Messages -->
+        {% if similarity < 70 %}
+        <div class="alert alert-danger">
+            <h5>⚠️ Low Similarity Warning</h5>
+            <p>The similarity between your ORI2 file and the solution's ORI1 file is below 70%. This could indicate:</p>
+            <ul>
+                <li>Different ECU software versions</li>
+                <li>Different hardware configurations</li>
+                <li>Incompatible file formats</li>
+                <li>Corrupted files</li>
+            </ul>
+            <p><strong>Proceeding with this application may result in an unusable or damaged ECU file.</strong></p>
+        </div>
+        {% elif similarity < 90 %}
+        <div class="alert alert-warning">
+            <h5>⚠️ Moderate Similarity Notice</h5>
+            <p>The similarity is acceptable but not optimal. Please verify that:</p>
+            <ul>
+                <li>Vehicle specifications match exactly</li>
+                <li>ECU hardware and software numbers are correct</li>
+                <li>File formats are compatible</li>
+            </ul>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <h5>✅ Excellent Compatibility</h5>
+            <p>High similarity detected. The files appear to be highly compatible. This solution should apply safely to your ORI2 file.</p>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-md-12 text-center">
+                <form method="POST" action="{{ url_for('main.apply_solution_confirmed', solution_id=similarity_data.solution_id) }}" class="d-inline me-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    {% if similarity >= 70 %}
+                        <button type="submit" class="btn btn-success btn-lg">
+                            ✅ Proceed with Application
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('⚠️ WARNING: Low similarity detected! Applying this solution may damage your ECU file. Are you absolutely sure you want to proceed?')">
+                            ⚠️ Force Application (Risk)
+                        </button>
+                    {% endif %}
+                </form>
+                
+                <a href="{{ url_for('main.modify_file') }}" class="btn btn-secondary btn-lg">
+                    ❌ Cancel
+                </a>
+            </div>
+        </div>
+
+        <!-- Technical Information -->
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>🔧 Technical Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <small class="text-muted">
+                            <p><strong>Quality Control Process:</strong></p>
+                            <ul>
+                                <li>This system compares your uploaded ORI2 file with the ORI1 file used to create the solution</li>
+                                <li>Similarity is calculated based on identical bytes between the two files</li>
+                                <li>Higher similarity indicates better compatibility and lower risk</li>
+                                <li>Files with different sizes will have reduced similarity scores</li>
+                            </ul>
+                            
+                            <p><strong>Recommended Actions:</strong></p>
+                            <ul>
+                                <li><strong>90%+ similarity:</strong> Proceed with confidence</li>
+                                <li><strong>70-89% similarity:</strong> Verify vehicle specifications carefully</li>
+                                <li><strong>Below 70% similarity:</strong> Double-check compatibility or contact support</li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
