@@ -1,0 +1,291 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>🔍 Compatibility Check - Quality Control</h3>
+        <small class="text-muted">Analyzing modification points for compatibility</small>
+    </div>
+    <div class="card-body">
+        
+        <!-- Compatibility Result -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📊 Compatibility Analysis</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        {% set compatibility = compatibility_data.compatibility_result.compatibility_percentage %}
+                        {% if compatibility >= 90 %}
+                            {% set badge_class = "bg-success" %}
+                            {% set icon = "✅" %}
+                            {% set status = "EXCELLENT COMPATIBILITY" %}
+                        {% elif compatibility >= 70 %}
+                            {% set badge_class = "bg-warning" %}
+                            {% set icon = "⚠️" %}
+                            {% set status = "ACCEPTABLE COMPATIBILITY" %}
+                        {% else %}
+                            {% set badge_class = "bg-danger" %}
+                            {% set icon = "❌" %}
+                            {% set status = "LOW COMPATIBILITY" %}
+                        {% endif %}
+                        
+                        <h2>
+                            <span class="badge {{ badge_class }} fs-1">
+                                {{ icon }} {{ compatibility }}%
+                            </span>
+                        </h2>
+                        <h4 class="mt-3">{{ status }}</h4>
+                        
+                        <div class="progress mt-3" style="height: 20px;">
+                            <div class="progress-bar {{ badge_class.replace('bg-', '') }}" 
+                                 role="progressbar" 
+                                 style="width: {{ compatibility }}%" 
+                                 aria-valuenow="{{ compatibility }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ compatibility }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Analysis -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>🎯 Modification Points Analysis</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Matching Points:</strong></td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        {{ compatibility_data.compatibility_result.matching_points }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Points:</strong></td>
+                                <td>{{ compatibility_data.compatibility_result.total_points }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Incompatible Points:</strong></td>
+                                <td>
+                                    {% set incompatible_count = compatibility_data.compatibility_result.total_points - compatibility_data.compatibility_result.matching_points %}
+                                    {% if incompatible_count > 0 %}
+                                        <span class="badge bg-danger">{{ incompatible_count }}</span>
+                                    {% else %}
+                                        <span class="badge bg-success">0</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Analysis Type:</strong></td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ compatibility_data.compatibility_result.analysis_type|replace('_', ' ')|title }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>ORI2 File Size:</strong></td>
+                                <td>{{ compatibility_data.compatibility_result.ori2_file_size|number_format }} bytes</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>🚗 Solution Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Solution ID:</strong></td>
+                                <td>#{{ compatibility_data.solution_info.id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Vehicle:</strong></td>
+                                <td>{{ compatibility_data.solution_info.vehicle_type }} {{ compatibility_data.solution_info.make }} {{ compatibility_data.solution_info.model }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Engine:</strong></td>
+                                <td>{{ compatibility_data.solution_info.engine }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Year:</strong></td>
+                                <td>{{ compatibility_data.solution_info.year }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ECU Type:</strong></td>
+                                <td>{{ compatibility_data.solution_info.ecu_type }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Hardware:</strong></td>
+                                <td>{{ compatibility_data.solution_info.hardware_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Software:</strong></td>
+                                <td>{{ compatibility_data.solution_info.software_number }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incompatible Points Details (if any) -->
+        {% if compatibility_data.compatibility_result.incompatible_points %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>❌ Incompatible Points Details</h6>
+                        <small class="text-muted">These memory positions don't match the expected values</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Address</th>
+                                        <th>Expected Value</th>
+                                        <th>Current Value</th>
+                                        <th>Will Change To</th>
+                                        <th>Difference</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for point in compatibility_data.compatibility_result.incompatible_points[:10] %}
+                                    <tr>
+                                        <td><code>0x{{ '%08X'|format(point.address) }}</code></td>
+                                        <td><code>{{ point.expected_value }}</code></td>
+                                        <td><code>{{ point.actual_value or 'N/A' }}</code></td>
+                                        <td><code>{{ point.modification_value }}</code></td>
+                                        <td>
+                                            {% if point.difference %}
+                                                <span class="badge bg-danger">{{ point.difference }}</span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><small>{{ point.reason }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if compatibility_data.compatibility_result.incompatible_points|length > 10 %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">
+                                            <small>... and {{ compatibility_data.compatibility_result.incompatible_points|length - 10 }} more incompatible points</small>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Warning Messages -->
+        {% if compatibility < 70 %}
+        <div class="alert alert-danger">
+            <h5>⚠️ Low Compatibility Warning</h5>
+            <p>The compatibility between your ORI2 file and this solution is below 70%. This indicates:</p>
+            <ul>
+                <li>Many memory positions don't contain the expected original values</li>
+                <li>Your file may have different software version or modifications</li>
+                <li>The solution was created for a different ECU variant</li>
+                <li>Previous modifications may have been applied to your file</li>
+            </ul>
+            <p><strong>Proceeding with this application may result in unexpected behavior or ECU damage.</strong></p>
+        </div>
+        {% elif compatibility < 90 %}
+        <div class="alert alert-warning">
+            <h5>⚠️ Moderate Compatibility Notice</h5>
+            <p>The compatibility is acceptable but not optimal. This could mean:</p>
+            <ul>
+                <li>Some memory positions have been modified previously</li>
+                <li>Minor differences in software versions</li>
+                <li>Partial compatibility with the solution</li>
+            </ul>
+            <p>Review the incompatible points above and verify they're acceptable for your use case.</p>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <h5>✅ Excellent Compatibility</h5>
+            <p>High compatibility detected! The memory positions match the expected values almost perfectly. This solution should apply safely to your ORI2 file.</p>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-md-12 text-center">
+                <form method="POST" action="{{ url_for('main.apply_solution_confirmed', solution_id=compatibility_data.solution_id) }}" class="d-inline me-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    {% if compatibility >= 70 %}
+                        <button type="submit" class="btn btn-success btn-lg">
+                            ✅ Proceed with Application
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('⚠️ WARNING: Low compatibility detected! This solution may not work correctly with your file. Are you absolutely sure you want to proceed?')">
+                            ⚠️ Force Application (High Risk)
+                        </button>
+                    {% endif %}
+                </form>
+                
+                <a href="{{ url_for('main.modify_file') }}" class="btn btn-secondary btn-lg">
+                    ❌ Cancel
+                </a>
+            </div>
+        </div>
+
+        <!-- Technical Information -->
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>🔧 Technical Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <small class="text-muted">
+                            <p><strong>New Compatibility Analysis Method:</strong></p>
+                            <ul>
+                                <li>This system analyzes the specific memory positions that will be modified by the solution</li>
+                                <li>Compatibility is calculated based on how many positions contain the expected original values</li>
+                                <li>Only the relevant modification points are checked (not the entire file)</li>
+                                <li>More accurate and faster than full file comparison</li>
+                            </ul>
+                            
+                            <p><strong>Analysis Details:</strong></p>
+                            <ul>
+                                <li><strong>Total Differences:</strong> {{ compatibility_data.analysis_details.total_differences }} modification points</li>
+                                <li><strong>Your ORI2 File:</strong> {{ compatibility_data.analysis_details.ori2_filename }}</li>
+                                <li><strong>Analysis Type:</strong> Differences-based compatibility check</li>
+                            </ul>
+                            
+                            <p><strong>Compatibility Levels:</strong></p>
+                            <ul>
+                                <li><strong>90%+ compatibility:</strong> Excellent - Proceed with confidence</li>
+                                <li><strong>70-89% compatibility:</strong> Good - Review incompatible points carefully</li>
+                                <li><strong>Below 70% compatibility:</strong> Poor - High risk, consider finding a better match</li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

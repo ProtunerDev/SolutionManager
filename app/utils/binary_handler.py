@@ -353,3 +353,107 @@ class BinaryHandler:
                 'file1_size': 0,
                 'file2_size': 0
             }
+
+    def calculate_compatibility_from_differences(self, ori2_data: List[int], differences_data: List[Dict]) -> Dict[str, Any]:
+        """
+        Calculate compatibility based on differences data instead of full file comparison.
+        
+        This method compares the current values in ORI2 at the modification points
+        against the expected original values (ori1_values) from the differences.
+        
+        Args:
+            ori2_data: Data from ORI2 file
+            differences_data: List of differences with memory_address, ori1_value, mod1_value
+            
+        Returns:
+            Dict: Compatibility analysis containing:
+                - compatibility_percentage (float): Percentage of matching values at difference points
+                - matching_points (int): Number of positions where ORI2 matches expected ori1_value
+                - total_points (int): Total number of difference points checked
+                - incompatible_points (List): Details of incompatible positions
+                - analysis_type (str): Type of analysis performed
+        """
+        try:
+            if not differences_data:
+                logger.warning("No differences data provided for compatibility check")
+                return {
+                    'compatibility_percentage': 0,
+                    'matching_points': 0,
+                    'total_points': 0,
+                    'incompatible_points': [],
+                    'analysis_type': 'differences_based',
+                    'error': 'No differences data available'
+                }
+            
+            matching_points = 0
+            total_points = len(differences_data)
+            incompatible_points = []
+            bytes_per_value = self.read_size // 8
+            
+            logger.debug(f"Analyzing {total_points} difference points for compatibility")
+            
+            for i, diff in enumerate(differences_data):
+                memory_address = diff['memory_address']
+                expected_ori1_value = diff['ori1_value']
+                mod1_value = diff['mod1_value']
+                
+                # Convert memory address to data index
+                data_index = memory_address // bytes_per_value
+                
+                # Check if the index is within bounds
+                if data_index >= len(ori2_data):
+                    incompatible_points.append({
+                        'address': memory_address,
+                        'index': data_index,
+                        'expected_value': expected_ori1_value,
+                        'actual_value': None,
+                        'reason': 'Address out of bounds',
+                        'modification_value': mod1_value
+                    })
+                    continue
+                
+                actual_ori2_value = ori2_data[data_index]
+                
+                # Check if the current ORI2 value matches the expected original value
+                if actual_ori2_value == expected_ori1_value:
+                    matching_points += 1
+                    logger.debug(f"✅ Point {i+1}: Address {memory_address:08X} - Expected: {expected_ori1_value}, Found: {actual_ori2_value} (MATCH)")
+                else:
+                    incompatible_points.append({
+                        'address': memory_address,
+                        'index': data_index,
+                        'expected_value': expected_ori1_value,
+                        'actual_value': actual_ori2_value,
+                        'reason': 'Value mismatch',
+                        'modification_value': mod1_value,
+                        'difference': abs(actual_ori2_value - expected_ori1_value)
+                    })
+                    logger.debug(f"❌ Point {i+1}: Address {memory_address:08X} - Expected: {expected_ori1_value}, Found: {actual_ori2_value} (MISMATCH)")
+            
+            # Calculate compatibility percentage
+            compatibility_percentage = (matching_points / total_points) * 100 if total_points > 0 else 0
+            
+            logger.info(f"Compatibility analysis complete:")
+            logger.info(f"- Matching points: {matching_points}/{total_points}")
+            logger.info(f"- Compatibility: {compatibility_percentage:.2f}%")
+            logger.info(f"- Incompatible points: {len(incompatible_points)}")
+            
+            return {
+                'compatibility_percentage': round(compatibility_percentage, 2),
+                'matching_points': matching_points,
+                'total_points': total_points,
+                'incompatible_points': incompatible_points,
+                'analysis_type': 'differences_based',
+                'ori2_file_size': len(ori2_data)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating compatibility from differences: {e}")
+            return {
+                'compatibility_percentage': 0,
+                'matching_points': 0,
+                'total_points': 0,
+                'incompatible_points': [],
+                'analysis_type': 'differences_based',
+                'error': str(e)
+            }

@@ -656,7 +656,7 @@ def delete_solution_from_home_ajax():
 @bp.route('/solutions/apply/<int:solution_id>', methods=['POST'])
 @login_required
 def apply_solution(solution_id):
-    """Check similarity and show confirmation before applying solution to ORI2 file."""
+    """Check compatibility using differences data and show confirmation before applying solution to ORI2 file."""
     if 'files' not in session or 'ori2' not in session['files']:
         flash('Please upload ORI2 file first', 'warning')
         return redirect(url_for('main.modify_file'))
@@ -671,43 +671,6 @@ def apply_solution(solution_id):
             logger.warning(f"No differences found for solution {solution_id}")
             return redirect(url_for('main.modify_file'))
         
-        # Obtener archivo ORI1 de la solución desde S3
-        ori1_filename, ori1_file_data = storage.get_file(solution_id, 'ori1')
-        if not ori1_file_data:
-            # Si no se encuentra ori1, intentar buscar en file_metadata
-            from app.database.db_manager import DatabaseManager
-            db = DatabaseManager()
-            try:
-                ori1_metadata = db.get_file_metadata(solution_id, 'ori1')
-                if ori1_metadata:
-                    # Intentar obtener el archivo usando la clave S3 directa
-                    import boto3
-                    from botocore.exceptions import ClientError
-                    s3_client = boto3.client(
-                        's3',
-                        aws_access_key_id=current_app.config['AWS_ACCESS_KEY_ID'],
-                        aws_secret_access_key=current_app.config['AWS_SECRET_ACCESS_KEY'],
-                        region_name=current_app.config['AWS_S3_REGION']
-                    )
-                    try:
-                        file_response = s3_client.get_object(
-                            Bucket=current_app.config['AWS_S3_BUCKET'],
-                            Key=ori1_metadata['s3_key']
-                        )
-                        ori1_file_data = file_response['Body'].read()
-                        ori1_filename = ori1_metadata['file_name']
-                    except ClientError as e:
-                        logger.error(f"Error accessing ORI1 file from S3: {e}")
-                        flash('Error retrieving ORI1 file from solution storage', 'danger')
-                        return redirect(url_for('main.modify_file'))
-                else:
-                    flash('ORI1 file not found for this solution', 'danger')
-                    return redirect(url_for('main.modify_file'))
-            except Exception as e:
-                logger.error(f"Error retrieving ORI1 metadata: {e}")
-                flash('Error retrieving ORI1 file metadata', 'danger')
-                return redirect(url_for('main.modify_file'))
-        
         # Obtener archivo ORI2 desde S3
         ori2_info = session['files']['ori2']
         ori2_filename, ori2_file_data = storage.get_file(ori2_info['solution_id'], 'ori2')
@@ -716,25 +679,21 @@ def apply_solution(solution_id):
             flash('Error retrieving ORI2 file from storage', 'danger')
             return redirect(url_for('main.modify_file'))
         
-        # Crear archivos temporales para comparar
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.ori', delete=False) as ori1_temp:
-            ori1_temp.write(ori1_file_data)
-            ori1_temp_path = ori1_temp.name
-            
+        # Crear archivo temporal ORI2 para procesar
         with tempfile.NamedTemporaryFile(mode='wb', suffix='.ori', delete=False) as ori2_temp:
             ori2_temp.write(ori2_file_data)
             ori2_temp_path = ori2_temp.name
         
         try:
-            # Calcular similitud entre ORI1 y ORI2
+            # Calcular compatibilidad usando los datos de diferencias
             binary_handler = BinaryHandler()
             bit_size = differences_data[0]['bit_size'] if differences_data else 8
             binary_handler.set_read_size(bit_size)
             
-            ori1_data = binary_handler.read_file(ori1_temp_path)
             ori2_data = binary_handler.read_file(ori2_temp_path)
             
-            similarity_result = binary_handler.calculate_similarity(ori1_data, ori2_data)
+            # NUEVA ESTRATEGIA: Usar diferencias para calcular compatibilidad
+            compatibility_result = binary_handler.calculate_compatibility_from_differences(ori2_data, differences_data)
             
             # Obtener información de la solución para mostrar en el modal
             from app.database.db_manager import DatabaseManager
@@ -742,9 +701,9 @@ def apply_solution(solution_id):
             solution = db.get_solution_by_id(solution_id)
             
             # Guardar datos en sesión para la confirmación
-            session['similarity_check'] = {
+            session['compatibility_check'] = {
                 'solution_id': solution_id,
-                'similarity_result': similarity_result,
+                'compatibility_result': compatibility_result,
                 'solution_info': {
                     'id': solution.id,
                     'vehicle_type': solution.vehicle_type,
@@ -755,48 +714,51 @@ def apply_solution(solution_id):
                     'ecu_type': solution.ecu_type,
                     'hardware_number': solution.hardware_number,
                     'software_number': solution.software_number
+                },
+                'analysis_details': {
+                    'total_differences': total_differences,
+                    'ori2_filename': ori2_filename
                 }
             }
             session.modified = True
             
-            # Redirigir a página de confirmación de similitud
-            return redirect(url_for('main.confirm_similarity'))
+            # Redirigir a página de confirmación de compatibilidad
+            return redirect(url_for('main.confirm_compatibility'))
             
         finally:
             # Limpiar archivos temporales
             try:
-                os.unlink(ori1_temp_path)
                 os.unlink(ori2_temp_path)
             except Exception as e:
                 logger.warning(f"Error cleaning up temp files: {e}")
                 
     except Exception as e:
-        logger.error(f"Error checking similarity: {e}")
-        flash(f'Error checking similarity: {str(e)}', 'danger')
+        logger.error(f"Error checking compatibility: {e}")
+        flash(f'Error checking compatibility: {str(e)}', 'danger')
         return redirect(url_for('main.modify_file'))
 
-@bp.route('/solutions/confirm_similarity')
+@bp.route('/solutions/confirm_compatibility')
 @login_required
-def confirm_similarity():
-    """Show similarity confirmation page."""
-    if 'similarity_check' not in session:
-        flash('No similarity check in progress', 'warning')
+def confirm_compatibility():
+    """Show compatibility confirmation page."""
+    if 'compatibility_check' not in session:
+        flash('No compatibility check in progress', 'warning')
         return redirect(url_for('main.modify_file'))
     
-    similarity_data = session['similarity_check']
-    return render_template('main/confirm_similarity.html', 
-                         similarity_data=similarity_data)
+    compatibility_data = session['compatibility_check']
+    return render_template('main/confirm_compatibility.html', 
+                         compatibility_data=compatibility_data)
 
 @bp.route('/solutions/apply_confirmed/<int:solution_id>', methods=['POST'])
 @login_required
 def apply_solution_confirmed(solution_id):
-    """Apply solution to ORI2 file after similarity confirmation."""
+    """Apply solution to ORI2 file after compatibility confirmation."""
     if 'files' not in session or 'ori2' not in session['files']:
         flash('Please upload ORI2 file first', 'warning')
         return redirect(url_for('main.modify_file'))
     
-    if 'similarity_check' not in session or session['similarity_check']['solution_id'] != solution_id:
-        flash('Invalid similarity check session', 'warning')
+    if 'compatibility_check' not in session or session['compatibility_check']['solution_id'] != solution_id:
+        flash('Invalid compatibility check session', 'warning')
         return redirect(url_for('main.modify_file'))
     
     try:
@@ -859,8 +821,8 @@ def apply_solution_confirmed(solution_id):
                         session['files'] = {}
                     session['files']['mod2'] = {'solution_id': ori2_info['solution_id'], 'filename': mod2_filename}
                     
-                    # Limpiar datos de similitud de la sesión
-                    session.pop('similarity_check', None)
+                    # Limpiar datos de compatibilidad de la sesión
+                    session.pop('compatibility_check', None)
                     session.modified = True
                     
                     flash('Solution applied successfully', 'success')

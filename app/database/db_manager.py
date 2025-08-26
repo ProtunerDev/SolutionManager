@@ -687,19 +687,22 @@ class DatabaseManager:
             Dict with file metadata or None if not found
         """
         try:
-            with self.get_connection() as conn:
-                with conn.cursor(cursor_factory=DictCursor) as cursor:
-                    cursor.execute("""
-                        SELECT id, solution_id, file_type, file_name, file_size, 
-                               s3_key, uploaded_at
-                        FROM file_metadata 
-                        WHERE solution_id = %s AND file_type = %s
-                    """, (solution_id, file_type))
-                    
-                    result = cursor.fetchone()
-                    if result:
-                        return dict(result)
+            with self as db:
+                if not db or not db.cursor:
+                    logger.error("Failed to establish database connection")
                     return None
+                    
+                db.cursor.execute("""
+                    SELECT id, solution_id, file_type, file_name, file_size, 
+                           s3_key, uploaded_at
+                    FROM file_metadata 
+                    WHERE solution_id = %s AND file_type = %s
+                """, (solution_id, file_type))
+                
+                result = db.cursor.fetchone()
+                if result:
+                    return dict(result)
+                return None
                     
         except Exception as e:
             logger.error(f"Error getting file metadata for solution {solution_id}, type {file_type}: {e}")
