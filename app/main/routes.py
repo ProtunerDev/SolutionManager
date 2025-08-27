@@ -685,17 +685,37 @@ def apply_solution(solution_id):
             ori2_temp_path = ori2_temp.name
         
         try:
-            # Calcular compatibilidad usando los datos de diferencias
+            # Obtener archivo ORI1 de la solución desde S3
+            ori1_filename, ori1_file_data = storage.get_file(solution_id, 'ori1')
+            
+            if not ori1_file_data:
+                flash('Error retrieving ORI1 file from storage for compatibility check', 'danger')
+                return redirect(url_for('main.modify_file'))
+            
+            # Crear archivo temporal ORI1 para procesar
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.ori', delete=False) as ori1_temp:
+                ori1_temp.write(ori1_file_data)
+                ori1_temp_path = ori1_temp.name
+            
+            # Calcular compatibilidad comparando ORI2 vs ORI1 directamente
             binary_handler = BinaryHandler()
             bit_size = differences_data[0]['bit_size'] if differences_data else 8
             binary_handler.set_read_size(bit_size)
-            
+
+            # Leer datos de ambos archivos
             ori2_data = binary_handler.read_file(ori2_temp_path)
+            ori1_data = binary_handler.read_file(ori1_temp_path)
+
+            # ESTRATEGIA CORREGIDA: Comparar ORI2 del usuario vs ORI1 de la solución
+            compatibility_result = binary_handler.calculate_similarity(ori2_data, ori1_data)
             
-            # NUEVA ESTRATEGIA: Usar diferencias para calcular compatibilidad
-            compatibility_result = binary_handler.calculate_compatibility_from_differences(ori2_data, differences_data)
-            
-            # Obtener información de la solución para mostrar en el modal
+            # Convertir resultado de similitud a formato compatible con template
+            # Mapear campos de similarity a formato de compatibility esperado por el template
+            compatibility_result['compatibility_percentage'] = compatibility_result['similarity_percentage']
+            compatibility_result['matching_points'] = compatibility_result['identical_bytes']
+            compatibility_result['total_points'] = compatibility_result['total_bytes']
+            compatibility_result['incompatible_points'] = []  # No hay detalles específicos de puntos incompatibles con similitud
+            compatibility_result['analysis_type'] = 'similarity_based'            # Obtener información de la solución para mostrar en el modal
             from app.database.db_manager import DatabaseManager
             db = DatabaseManager()
             solution = db.get_solution_by_id(solution_id)
@@ -737,6 +757,7 @@ def apply_solution(solution_id):
             # Limpiar archivos temporales
             try:
                 os.unlink(ori2_temp_path)
+                os.unlink(ori1_temp_path)  # Limpiar también el archivo ORI1 temporal
             except Exception as e:
                 logger.warning(f"Error cleaning up temp files: {e}")
                 
@@ -759,7 +780,7 @@ def confirm_compatibility():
     compatibility_data = session['compatibility_check']
     logger.info(f"Rendering compatibility confirmation with {compatibility_data['compatibility_result']['compatibility_percentage']}% compatibility")
     
-    return render_template('main/confirm_compatibility_test.html', 
+    return render_template('main/confirm_compatibility.html', 
                          compatibility_data=compatibility_data)
 
 @bp.route('/solutions/apply_confirmed/<int:solution_id>', methods=['POST'])
