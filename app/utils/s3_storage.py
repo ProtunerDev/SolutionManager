@@ -350,6 +350,100 @@ class S3FileStorage:
             logger.error(f"Error getting differences from S3: {e}")
             return None, 0
     
+    def transfer_temp_files(self, temp_solution_id, real_solution_id):
+        """Transferir archivos de solución temporal a solución real"""
+        try:
+            real_solution_id = int(real_solution_id)
+            temp_solution_id = str(temp_solution_id)
+            
+            logger.info(f"Transferring files from temp {temp_solution_id} to solution {real_solution_id}")
+            
+            # Listar todos los archivos temporales
+            temp_prefix = f"solutions/{temp_solution_id}/"
+            response = self.s3_client.list_objects_v2(
+                Bucket=self.bucket_name,
+                Prefix=temp_prefix
+            )
+            
+            if 'Contents' not in response:
+                logger.warning(f"No temp files found for {temp_solution_id}")
+                return False
+            
+            # Transferir cada archivo
+            for obj in response['Contents']:
+                old_key = obj['Key']
+                
+                # Extraer file_type y filename del path
+                # Format: solutions/{temp_id}/{file_type}/{filename}
+                path_parts = old_key.split('/')
+                if len(path_parts) >= 4:
+                    file_type = path_parts[2]
+                    filename = path_parts[3]
+                    
+                    # Nueva clave para la solución real
+                    new_key = f"solutions/{real_solution_id}/{file_type}/{filename}"
+                    
+                    # Copiar archivo
+                    copy_source = {'Bucket': self.bucket_name, 'Key': old_key}
+                    self.s3_client.copy_object(
+                        CopySource=copy_source,
+                        Bucket=self.bucket_name,
+                        Key=new_key,
+                        MetadataDirective='REPLACE',
+                        Metadata={
+                            'solution_id': str(real_solution_id),
+                            'file_type': file_type,
+                            'original_filename': filename
+                        }
+                    )
+                    
+                    # Obtener tamaño del archivo
+                    file_size = obj['Size']
+                    
+                    # Guardar metadatos en PostgreSQL
+                    self._save_file_metadata(real_solution_id, file_type, filename, file_size, new_key)
+                    
+                    logger.info(f"Transferred {old_key} -> {new_key}")
+            
+            # Eliminar archivos temporales
+            self.delete_temp_files(temp_solution_id)
+            
+            logger.info(f"Successfully transferred all files from {temp_solution_id} to {real_solution_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error transferring temp files: {e}")
+            return False
+    
+    def delete_temp_files(self, temp_solution_id):
+        """Eliminar archivos temporales"""
+        try:
+            temp_solution_id = str(temp_solution_id)
+            
+            # Listar todos los objetos temporales
+            prefix = f"solutions/{temp_solution_id}/"
+            response = self.s3_client.list_objects_v2(
+                Bucket=self.bucket_name,
+                Prefix=prefix
+            )
+            
+            # Eliminar objetos de S3
+            if 'Contents' in response:
+                objects_to_delete = [{'Key': obj['Key']} for obj in response['Contents']]
+                
+                self.s3_client.delete_objects(
+                    Bucket=self.bucket_name,
+                    Delete={'Objects': objects_to_delete}
+                )
+                
+                logger.info(f"Deleted {len(objects_to_delete)} temp files for {temp_solution_id}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error deleting temp files: {e}")
+            return False
+
     def delete_solution_files(self, solution_id):
         """Eliminar todos los archivos de una solution"""
         try:
