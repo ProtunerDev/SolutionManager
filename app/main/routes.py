@@ -689,7 +689,8 @@ def apply_solution(solution_id):
             ori1_filename, ori1_file_data = storage.get_file(solution_id, 'ori1')
             
             if not ori1_file_data:
-                flash('Error retrieving ORI1 file from storage for compatibility check', 'danger')
+                logger.error(f"ORI1 file not found for solution {solution_id}")
+                flash(f'Esta solución (ID: {solution_id}) no tiene archivo ORI1 disponible. Por favor, selecciona una solución diferente o contacta al administrador para que complete esta solución.', 'warning')
                 return redirect(url_for('main.modify_file'))
             
             # Crear archivo temporal ORI1 para procesar
