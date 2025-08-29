@@ -24,9 +24,25 @@ from flask import send_file
 import io
 
 import logging
+import shutil
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+def cleanup_temp_files(session_id):
+    """
+    Limpia los archivos temporales de una sesión específica
+    """
+    try:
+        temp_dir = os.path.join(tempfile.gettempdir(), 'solutionmanager', session_id)
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+            logger.info(f"🧹 Directorio temporal limpiado: {temp_dir}")
+            return True
+        return False
+    except Exception as e:
+        logger.warning(f"Error limpiando directorio temporal {session_id}: {e}")
+        return False
 
 ALLOWED_EXTENSIONS = {'bin', 'ori', 'mod', 'dtf'}
 
@@ -134,15 +150,29 @@ def upload_file():
         
         logger.info(f"Uploading file: {filename} (type: {file_type}, size: {len(file_data)} bytes)")
         
-        # NUEVO ENFOQUE: Guardar archivos en la sesión hasta crear la solución
+        # OPTIMIZADO: Guardar archivos temporalmente en disco en lugar de sesión
+        # Crear directorio temporal único para esta sesión
+        import tempfile
+        import uuid
+        
+        if 'temp_session_id' not in session:
+            session['temp_session_id'] = str(uuid.uuid4())
+        
+        temp_dir = os.path.join(tempfile.gettempdir(), 'solutionmanager', session['temp_session_id'])
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Guardar archivo en disco temporal
+        temp_file_path = os.path.join(temp_dir, f"{file_type}_{filename}")
+        with open(temp_file_path, 'wb') as f:
+            f.write(file_data)
+        
+        # Guardar solo metadata en sesión (no el archivo completo)
         if 'uploaded_files' not in session:
             session['uploaded_files'] = {}
         
-        # Guardar archivo en memoria (base64 para serialización en session)
-        import base64
         session['uploaded_files'][file_type] = {
             'filename': filename,
-            'data': base64.b64encode(file_data).decode('utf-8'),
+            'temp_path': temp_file_path,
             'size': len(file_data)
         }
         
@@ -155,7 +185,7 @@ def upload_file():
         if file_type == 'ori2':
             session['ori2_base_name'] = os.path.splitext(filename)[0]
         
-        logger.info(f"✅ Archivo {filename} ({file_type}) guardado en sesión temporalmente")
+        logger.info(f"✅ Archivo {filename} ({file_type}) guardado temporalmente en: {temp_file_path}")
         flash(f'{file_type.upper()} file uploaded successfully!', 'success')
         
         session.modified = True
@@ -190,7 +220,7 @@ def compare_files():
     
     POST: Process comparison request and redirect back to add_solution
     """
-    if 'files' not in session or 'ori1' not in session['files'] or 'mod1' not in session['files']:
+    if 'uploaded_files' not in session or 'ori1' not in session['uploaded_files'] or 'mod1' not in session['uploaded_files']:
         flash('Please upload ORI1 and MOD1 files first', 'warning')
         return redirect(url_for('main.add_solution'))
         
@@ -200,57 +230,65 @@ def compare_files():
         binary_handler = BinaryHandler()
         binary_handler.set_read_size(bit_size)
         
-        # Obtener archivos desde S3 storage
-        storage = get_file_storage()
-        ori1_info = session['files']['ori1']
-        mod1_info = session['files']['mod1']
+        # Leer archivos desde disco temporal (nueva implementación)
+        ori1_info = session['uploaded_files']['ori1']
+        mod1_info = session['uploaded_files']['mod1']
         
-        # Descargar archivos temporalmente para comparación
-        ori1_filename, ori1_data = storage.get_file(ori1_info['solution_id'], 'ori1')
-        mod1_filename, mod1_data = storage.get_file(mod1_info['solution_id'], 'mod1')
+        ori1_temp_path = ori1_info['temp_path']
+        mod1_temp_path = mod1_info['temp_path']
         
-        if not ori1_data or not mod1_data:
-            flash('Error retrieving files from storage', 'danger')
+        # Verificar que los archivos existen
+        if not os.path.exists(ori1_temp_path) or not os.path.exists(mod1_temp_path):
+            flash('Temporary files not found. Please re-upload the files.', 'danger')
             return redirect(url_for('main.add_solution'))
         
-        # Crear archivos temporales para la comparación
-        import tempfile
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.ori', delete=False) as ori1_temp:
-            ori1_temp.write(ori1_data)
-            ori1_temp_path = ori1_temp.name
-            
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.mod', delete=False) as mod1_temp:
-            mod1_temp.write(mod1_data)
-            mod1_temp_path = mod1_temp.name
+        logger.info(f"Comparing files: {ori1_temp_path} vs {mod1_temp_path} with {bit_size}-bit size")
         
+        # Comparar archivos
+        differences = binary_handler.compare_files(ori1_temp_path, mod1_temp_path)
+        
+        session['bit_size'] = bit_size
+
+        # --- NUEVO: Subir archivos a S3 con temp_solution_id para posterior transferencia ---
+        import time
+        temp_solution_id = f"temp_{int(time.time())}"
+        
+        # Subir archivos temporales a S3 para que puedan ser transferidos posteriormente
+        storage = get_file_storage()
+        
+        with open(ori1_temp_path, 'rb') as f:
+            ori1_data = f.read()
+        with open(mod1_temp_path, 'rb') as f:
+            mod1_data = f.read()
+            
+        storage.save_file(temp_solution_id, 'ori1', ori1_info['filename'], ori1_data)
+        storage.save_file(temp_solution_id, 'mod1', mod1_info['filename'], mod1_data)
+        
+        session['temp_solution_id'] = temp_solution_id
+        logger.info(f"📁 Archivos subidos temporalmente con ID: {temp_solution_id}")
+
+        # Guardar diferencias en archivo JSON
+        filename = f"differences_{int(time.time() * 1000000)}.json"
+        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        with open(filepath, 'w') as f:
+            json.dump([
+                (diff[0], diff[1], diff[2]) for diff in differences
+            ], f)
+        session['differences_file'] = filename
+        session.modified = True
+
+        flash(f'Files compared successfully. {len(differences)} differences found.', 'success')
+        
+        # Limpiar archivos temporales del disco local
         try:
-            # Comparar archivos
-            differences = binary_handler.compare_files(ori1_temp_path, mod1_temp_path)
-            
-            session['bit_size'] = bit_size
-
-            # --- NEW: Save differences to a file instead of session ---
-            # Usar timestamp para filename único
-            import time
-            filename = f"differences_{int(time.time() * 1000000)}.json"
-            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            with open(filepath, 'w') as f:
-                json.dump([
-                    (diff[0], diff[1], diff[2]) for diff in differences
-                ], f)
-            session['differences_file'] = filename
-            session.modified = True
-            # ---------------------------------------------------------
-
-            flash(f'Files compared successfully. {len(differences)} differences found.', 'success')
-            
-        finally:
-            # Limpiar archivos temporales
-            try:
-                os.unlink(ori1_temp_path)
-                os.unlink(mod1_temp_path)
-            except Exception as e:
-                logger.warning(f"Error cleaning up temp files: {e}")
+            if 'temp_session_id' in session:
+                import shutil
+                temp_dir = os.path.join(tempfile.gettempdir(), 'solutionmanager', session['temp_session_id'])
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                    logger.info(f"🧹 Limpieza de directorio temporal: {temp_dir}")
+        except Exception as e:
+            logger.warning(f"Error cleaning up temp directory: {e}")
                 
         return redirect(url_for('main.add_solution'))
     except Exception as e:
@@ -485,9 +523,25 @@ def add_solution():
                     flash('Solution added successfully', 'success')
                     # Clean up uploaded files and related session data
                     session.pop('files', None)
+                    session.pop('uploaded_files', None)  # NUEVO: Limpiar uploaded_files
                     session.pop('ori2_base_name', None)
                     session.pop('differences_file', None)  # Limpiar archivo temporal
                     session.pop('temp_solution_id', None)  # NUEVO: Limpiar temp_solution_id
+                    
+                    # Limpiar archivos temporales del disco
+                    if 'temp_session_id' in session:
+                        try:
+                            import tempfile
+                            import shutil
+                            temp_dir = os.path.join(tempfile.gettempdir(), 'solutionmanager', session['temp_session_id'])
+                            if os.path.exists(temp_dir):
+                                shutil.rmtree(temp_dir)
+                                logger.info(f"🧹 Limpieza final de directorio temporal: {temp_dir}")
+                        except Exception as e:
+                            logger.warning(f"Error cleaning up temp directory on solution creation: {e}")
+                        finally:
+                            session.pop('temp_session_id', None)
+                    
                     session.modified = True
                     return redirect(url_for('main.solution_detail', solution_id=solution_id))
                 else:
