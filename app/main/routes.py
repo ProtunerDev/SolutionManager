@@ -134,35 +134,29 @@ def upload_file():
         
         logger.info(f"Uploading file: {filename} (type: {file_type}, size: {len(file_data)} bytes)")
         
-        # Usar storage configurado (S3 según .env)
-        storage = get_file_storage()
+        # NUEVO ENFOQUE: Guardar archivos en la sesión hasta crear la solución
+        if 'uploaded_files' not in session:
+            session['uploaded_files'] = {}
         
-        # Obtener o crear solution_id temporal como entero
-        solution_id = session.get('temp_solution_id')
-        if not solution_id:
-            # Generar un ID temporal único basado en timestamp
-            import time
-            solution_id = int(time.time() * 1000000) % 999999999  # Usar timestamp en microsegundos como ID temporal
-            session['temp_solution_id'] = solution_id
-            logger.info(f"🆕 Creado nuevo temp_solution_id: {solution_id}")
-        else:
-            logger.info(f"📋 Usando temp_solution_id existente: {solution_id}")
+        # Guardar archivo en memoria (base64 para serialización en session)
+        import base64
+        session['uploaded_files'][file_type] = {
+            'filename': filename,
+            'data': base64.b64encode(file_data).decode('utf-8'),
+            'size': len(file_data)
+        }
         
-        logger.info(f"Using solution_id: {solution_id}")
+        # Mantener compatibilidad con el sistema existente
+        if 'files' not in session:
+            session['files'] = {}
+        session['files'][file_type] = {'filename': filename}
         
-        # Guardar archivo en S3
-        try:
-            logger.info(f"📤 Intentando guardar archivo: {filename} (type: {file_type}) en solution_id: {solution_id}")
-            if storage.store_file(solution_id, file_type, filename, file_data):
-                # Actualizar session para tracking
-                if 'files' not in session:
-                    session['files'] = {}
-                session['files'][file_type] = {'solution_id': solution_id, 'filename': filename}
-                logger.info(f"✅ Archivo guardado y session actualizada para {file_type}")
-                
-                # Store original filename for MOD2
-                if file_type == 'ori2':
-                    session['ori2_base_name'] = os.path.splitext(filename)[0]
+        # Store original filename for MOD2
+        if file_type == 'ori2':
+            session['ori2_base_name'] = os.path.splitext(filename)[0]
+        
+        logger.info(f"✅ Archivo {filename} ({file_type}) guardado en sesión temporalmente")
+        flash(f'{file_type.upper()} file uploaded successfully!', 'success')
                 
                 session.modified = True
                 
@@ -457,24 +451,24 @@ def add_solution():
                 if solution_id:
                     bit_size = session.get('bit_size', 8)
                     
-                    # NUEVO: Transferir archivos temporales a la solución real
+                    # TRANSFERIR SOLO ORI1 PERMANENTEMENTE - MOD1 se elimina después de extraer diferencias
                     temp_solution_id = session.get('temp_solution_id')
                     logger.info(f"🔍 TRANSFER DEBUG: solution_id={solution_id}, temp_solution_id={temp_solution_id}")
                     
                     if temp_solution_id:
-                        logger.info(f"🔄 Iniciando transferencia de archivos: {temp_solution_id} -> {solution_id}")
+                        logger.info(f"🔄 Iniciando transferencia de ORI1 permanente: {temp_solution_id} -> {solution_id}")
                         storage = get_file_storage()
                         
                         try:
                             transfer_result = storage.transfer_temp_files(temp_solution_id, solution_id)
                             if transfer_result:
-                                logger.info(f"✅ Successfully transferred temp files from {temp_solution_id} to {solution_id}")
+                                logger.info(f"✅ ORI1 transferred permanently, MOD1 deleted from {temp_solution_id} to {solution_id}")
                             else:
-                                logger.error(f"❌ Failed to transfer temp files from {temp_solution_id} to {solution_id}")
+                                logger.error(f"❌ Failed to transfer ORI1 from {temp_solution_id} to {solution_id}")
                         except Exception as e:
                             logger.error(f"❌ Exception during transfer_temp_files: {e}")
                     else:
-                        logger.warning(f"⚠️ No temp_solution_id found in session - archivos no se transferirán")
+                        logger.warning(f"⚠️ No temp_solution_id found in session - ORI1 no se transferirá")
                     
                     # Preparar diferencias para S3 storage
                     differences_for_storage = []
