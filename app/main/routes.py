@@ -157,31 +157,26 @@ def upload_file():
         
         logger.info(f"✅ Archivo {filename} ({file_type}) guardado en sesión temporalmente")
         flash(f'{file_type.upper()} file uploaded successfully!', 'success')
-                
-                session.modified = True
-                
-                # Build search params for redirect
-                search_params = {}
-                for field in [
-                    'vehicle_type', 'make', 'model', 'engine', 'ecu_type',
-                    'hardware_number', 'software_number', 'software_update_number',
-                    'year', 'transmission_type'
-                ]:
-                    value = request.form.get(field)
-                    if value:
-                        search_params[field] = value
-                
-                if file_type == 'ori2':
-                    flash('ORI2 file uploaded successfully', 'success')
-                    return redirect(url_for('main.modify_file', **search_params))
-                else:
-                    flash(f'{file_type.upper()} file uploaded successfully', 'success')
-                    return redirect(url_for('main.add_solution'))
-            else:
-                flash('Error uploading file to storage', 'danger')
-        except Exception as e:
-            logger.error(f"Error during file upload: {e}")
-            flash(f'Error uploading file: {str(e)}', 'danger')
+        
+        session.modified = True
+        
+        # Build search params for redirect
+        search_params = {}
+        for field in [
+            'vehicle_type', 'make', 'model', 'engine', 'ecu_type',
+            'hardware_number', 'software_number', 'software_update_number',
+            'year', 'transmission_type'
+        ]:
+            value = request.form.get(field)
+            if value:
+                search_params[field] = value
+        
+        if file_type == 'ori2':
+            flash('ORI2 file uploaded successfully', 'success')
+            return redirect(url_for('main.modify_file', **search_params))
+        else:
+            flash(f'{file_type.upper()} file uploaded successfully', 'success')
+            return redirect(url_for('main.add_solution'))
     else:
         flash(f'Invalid file type. Allowed types: .ori, .mod, .bin, .dtf, .DTF (got: {file.filename})', 'danger')
     
