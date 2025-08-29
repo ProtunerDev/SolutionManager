@@ -484,24 +484,25 @@ def add_solution():
                 if solution_id:
                     bit_size = session.get('bit_size', 8)
                     
-                    # TRANSFERIR SOLO ORI1 PERMANENTEMENTE - MOD1 se elimina después de extraer diferencias
+                    # TRANSFERIR ORI1 + MOD1 PERMANENTEMENTE para trazabilidad completa
                     temp_solution_id = session.get('temp_solution_id')
                     logger.info(f"🔍 TRANSFER DEBUG: solution_id={solution_id}, temp_solution_id={temp_solution_id}")
                     
                     if temp_solution_id:
-                        logger.info(f"🔄 Iniciando transferencia de ORI1 permanente: {temp_solution_id} -> {solution_id}")
+                        logger.info(f"🔄 Iniciando transferencia de ORI1 + MOD1 permanente: {temp_solution_id} -> {solution_id}")
                         storage = get_file_storage()
                         
                         try:
                             transfer_result = storage.transfer_temp_files(temp_solution_id, solution_id)
                             if transfer_result:
-                                logger.info(f"✅ ORI1 transferred permanently, MOD1 deleted from {temp_solution_id} to {solution_id}")
+                                logger.info(f"✅ ORI1 + MOD1 transferred permanently from {temp_solution_id} to {solution_id}")
+                                logger.info(f"🎯 BENEFICIO: Trazabilidad completa - ambos archivos asociados a solución {solution_id}")
                             else:
-                                logger.error(f"❌ Failed to transfer ORI1 from {temp_solution_id} to {solution_id}")
+                                logger.error(f"❌ Failed to transfer ORI1 + MOD1 from {temp_solution_id} to {solution_id}")
                         except Exception as e:
                             logger.error(f"❌ Exception during transfer_temp_files: {e}")
                     else:
-                        logger.warning(f"⚠️ No temp_solution_id found in session - ORI1 no se transferirá")
+                        logger.warning(f"⚠️ No temp_solution_id found in session - ORI1 + MOD1 no se transferirán")
                     
                     # Preparar diferencias para S3 storage
                     differences_for_storage = []

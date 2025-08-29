@@ -351,12 +351,12 @@ class S3FileStorage:
             return None, 0
     
     def transfer_temp_files(self, temp_solution_id, real_solution_id):
-        """Transferir solo ORI1 permanentemente, MOD1 se elimina después de extraer diferencias"""
+        """Transferir ORI1 y MOD1 permanentemente para trazabilidad completa de la solución"""
         try:
             real_solution_id = int(real_solution_id)
             temp_solution_id = str(temp_solution_id)
             
-            logger.info(f"Transferring ORI1 from temp {temp_solution_id} to solution {real_solution_id}")
+            logger.info(f"Transferring ORI1 + MOD1 from temp {temp_solution_id} to solution {real_solution_id}")
             
             # Listar todos los archivos temporales
             temp_prefix = f"solutions/{temp_solution_id}/"
@@ -369,8 +369,10 @@ class S3FileStorage:
                 logger.warning(f"No temp files found for {temp_solution_id}")
                 return False
             
-            # Solo transferir ORI1 permanentemente, ignorar MOD1
+            # Transferir AMBOS archivos (ORI1 + MOD1) permanentemente
             files_transferred = 0
+            transferred_files = []
+            
             for obj in response['Contents']:
                 old_key = obj['Key']
                 
@@ -381,12 +383,12 @@ class S3FileStorage:
                     file_type = path_parts[2]
                     filename = path_parts[3]
                     
-                    # SOLO transferir ORI1 permanentemente
-                    if file_type == 'ori1':
+                    # Transferir TANTO ORI1 como MOD1 permanentemente
+                    if file_type in ['ori1', 'mod1']:
                         # Nueva clave para la solución real
                         new_key = f"solutions/{real_solution_id}/{file_type}/{filename}"
                         
-                        # Copiar archivo ORI1
+                        # Copiar archivo permanentemente
                         copy_source = {'Bucket': self.bucket_name, 'Key': old_key}
                         self.s3_client.copy_object(
                             CopySource=copy_source,
@@ -403,27 +405,35 @@ class S3FileStorage:
                         # Obtener tamaño del archivo
                         file_size = obj['Size']
                         
-                        # Guardar metadatos en PostgreSQL solo para ORI1
+                        # Guardar metadatos en PostgreSQL para ambos archivos
                         self._save_file_metadata(real_solution_id, file_type, filename, file_size, new_key)
                         
-                        logger.info(f"✅ ORI1 transferred permanently: {old_key} -> {new_key}")
+                        transferred_files.append({
+                            'file_type': file_type,
+                            'filename': filename,
+                            'old_key': old_key,
+                            'new_key': new_key,
+                            'size': file_size
+                        })
+                        
+                        logger.info(f"✅ {file_type.upper()} transferred permanently: {old_key} -> {new_key}")
                         files_transferred += 1
-                    
-                    elif file_type == 'mod1':
-                        logger.info(f"🗑️ MOD1 will be deleted (temporary file): {old_key}")
                     
                     else:
                         logger.info(f"ℹ️ Other file type found: {file_type} - {old_key}")
             
-            # Eliminar TODOS los archivos temporales (incluyendo MOD1)
+            # Eliminar archivos temporales después de transferir
             self.delete_temp_files(temp_solution_id)
             
             if files_transferred > 0:
-                logger.info(f"✅ Successfully transferred {files_transferred} ORI1 files from {temp_solution_id} to {real_solution_id}")
-                logger.info(f"🗑️ All temporary files (including MOD1) deleted from {temp_solution_id}")
+                logger.info(f"✅ Successfully transferred {files_transferred} files from {temp_solution_id} to {real_solution_id}")
+                for file_info in transferred_files:
+                    logger.info(f"   � {file_info['file_type'].upper()}: {file_info['filename']} ({file_info['size']:,} bytes)")
+                logger.info(f"🗑️ Temporary files deleted from {temp_solution_id}")
+                logger.info(f"🎯 RESULTADO: ORI1 + MOD1 guardados permanentemente para trazabilidad completa")
                 return True
             else:
-                logger.warning(f"⚠️ No ORI1 files found to transfer from {temp_solution_id}")
+                logger.warning(f"⚠️ No ORI1/MOD1 files found to transfer from {temp_solution_id}")
                 return False
             
         except Exception as e:

@@ -1,3 +1,118 @@
+# 🎯 ANÁLISIS: Problema de Almacenamiento ORI1 + MOD1 Permanente
+
+## ❗ **PROBLEMA IDENTIFICADO**
+
+### **Requerimiento Real:**
+El usuario necesita que **tanto ORI1 como MOD1** utilizados para crear una solución se guarden **permanentemente** asociados a esa solución, no solo temporalmente para la comparación.
+
+### **¿Por qué es crítico guardar ambos archivos?**
+- ✅ **Trazabilidad**: Saber exactamente qué archivos generaron la solución
+- ✅ **Reproducibilidad**: Poder regenerar las diferencias si es necesario  
+- ✅ **Auditoría**: Historial completo de la creación de la solución
+- ✅ **Debugging**: Investigar problemas en soluciones existentes
+- ✅ **Compatibilidad**: Verificar si nuevos ORI2 son compatibles con el ORI1 original
+
+---
+
+## 🔄 **FLUJO ACTUAL vs REQUERIDO**
+
+### **Flujo Actual (Con el fix temporal):**
+```
+1. Upload ORI1/MOD1 → Disco temporal
+2. Compare → Generar diferencias
+3. Save Solution → Transfer solo ORI1 permanente, eliminar MOD1 ❌
+4. Resultado: Solo ORI1 queda, MOD1 se pierde
+```
+
+### **Flujo Requerido:**
+```
+1. Upload ORI1/MOD1 → Almacenamiento temporal
+2. Compare → Generar diferencias  
+3. Save Solution → Transfer ORI1 + MOD1 permanentes ✅
+4. Resultado: Ambos archivos asociados permanentemente a la solución
+```
+
+---
+
+## 🚀 **SOLUCIONES PROPUESTAS**
+
+### **📋 OPCIÓN 1: Modificar Sistema Actual (RÁPIDO - 30 min)**
+
+**Cambio mínimo**: Modificar la lógica de transferencia para guardar ambos archivos.
+
+#### En `s3_storage.py` - función `transfer_temp_files()`:
+```python
+# ANTES: Solo transferir ORI1
+if file_type == 'ori1':  # Solo ORI1
+    # Transfer logic...
+
+# DESPUÉS: Transferir ORI1 + MOD1  
+if file_type in ['ori1', 'mod1']:  # Ambos archivos
+    # Transfer logic...
+```
+
+#### Resultado:
+- ✅ **ORI1** guardado permanentemente (para comparaciones futuras)
+- ✅ **MOD1** guardado permanentemente (para trazabilidad completa)
+- ✅ **Ambos** asociados a la solución creada
+- ✅ **Compatibilidad** 100% con sistema existente
+
+### **📋 OPCIÓN 2: Sistema Híbrido (RECOMENDADO - 2-3 horas)**
+
+Combinar ventajas del sistema actual con Presigned URLs:
+
+#### Para Archivos Pequeños (< 5MB):
+- Usar sistema actual mejorado
+- Guardar en disco temporal cifrado
+- Transfer a S3 permanente al crear solución
+
+#### Para Archivos Grandes (> 5MB):
+- Usar Presigned URLs con transferencia automática
+- Upload directo a S3 temp
+- Al crear solución, mover de temp a permanent
+
+### **📋 OPCIÓN 3: Presigned URLs Completo (PROFESIONAL - 1 semana)**
+
+Flujo completamente optimizado:
+```
+1. Frontend solicita presigned URLs para ORI1 + MOD1
+2. Upload directo a S3 en ubicaciones temporales
+3. Backend procesa archivos desde S3 temp
+4. Al crear solución, mover archivos a ubicación permanente
+5. Mantener referencia completa en base de datos
+```
+
+---
+
+## 📊 **COMPARACIÓN DE OPCIONES**
+
+| Aspecto | Opción 1 (Fix Rápido) | Opción 2 (Híbrido) | Opción 3 (Presigned) |
+|---------|----------------------|-------------------|-------------------|
+| **Tiempo Implementación** | 30 minutos | 2-3 horas | 1 semana |
+| **Compatibilidad** | ✅ 100% | ✅ 95% | ⚠️ 70% |
+| **Rendimiento** | ⚠️ Limitado | ✅ Bueno | ✅ Excelente |
+| **Escalabilidad** | ⚠️ Limitada | ✅ Buena | ✅ Excelente |
+| **Complejidad** | ✅ Baja | ⚠️ Media | ❌ Alta |
+| **Guarda ORI1+MOD1** | ✅ Sí | ✅ Sí | ✅ Sí |
+
+---
+
+## 🎯 **RECOMENDACIÓN INMEDIATA**
+
+### **Para tu caso específico: OPCIÓN 1**
+
+El cambio mínimo necesario es modificar `transfer_temp_files()` en `s3_storage.py` para incluir MOD1 además de ORI1.
+
+**Ventajas:**
+- ✅ Resuelve tu problema específico inmediatamente
+- ✅ Cambio mínimo, bajo riesgo
+- ✅ Mantiene toda la funcionalidad existente
+- ✅ Ambos archivos quedan permanentemente asociados a la solución
+
+¿Procedo con la implementación de la **Opción 1** para resolver tu problema inmediatamente?
+
+---
+
 # 📊 ANÁLISIS DE ALMACENAMIENTO - BASE DE DATOS vs S3
 
 ## 🏗️ ARQUITECTURA ACTUAL
