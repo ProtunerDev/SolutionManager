@@ -261,8 +261,8 @@ def compare_files():
         with open(mod1_temp_path, 'rb') as f:
             mod1_data = f.read()
             
-        storage.save_file(temp_solution_id, 'ori1', ori1_info['filename'], ori1_data)
-        storage.save_file(temp_solution_id, 'mod1', mod1_info['filename'], mod1_data)
+        storage.store_file(temp_solution_id, 'ori1', ori1_info['filename'], ori1_data)
+        storage.store_file(temp_solution_id, 'mod1', mod1_info['filename'], mod1_data)
         
         session['temp_solution_id'] = temp_solution_id
         logger.info(f"📁 Archivos subidos temporalmente con ID: {temp_solution_id}")

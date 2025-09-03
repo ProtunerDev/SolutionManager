@@ -97,6 +97,18 @@ class S3FileStorage:
             logger.error(f"Error uploading to S3: {e}")
             return False
     
+    def upload_temp_file(self, file_data, file_name, file_type, temp_solution_id):
+        """Subir archivo temporal a S3 (alias de store_file para archivos temporales)"""
+        try:
+            s3_key = self.store_file(temp_solution_id, file_type, file_name, file_data)
+            if s3_key:
+                # Retornar la clave S3 para archivos temporales
+                return self._get_s3_key(temp_solution_id, file_type, file_name)
+            return None
+        except Exception as e:
+            logger.error(f"Error uploading temp file: {e}")
+            return None
+    
     def _save_file_metadata(self, solution_id, file_type, file_name, file_size, s3_key):
         """Guardar metadatos del archivo en PostgreSQL"""
         try:
