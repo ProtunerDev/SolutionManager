@@ -785,7 +785,9 @@ def apply_solution(solution_id):
             compatibility_result['matching_points'] = compatibility_result['identical_bytes']
             compatibility_result['total_points'] = compatibility_result['total_bytes']
             compatibility_result['incompatible_points'] = []  # No hay detalles específicos de puntos incompatibles con similitud
-            compatibility_result['analysis_type'] = 'similarity_based'            # Obtener información de la solución para mostrar en el modal
+            compatibility_result['analysis_type'] = 'similarity_based'
+            
+            # Obtener información de la solución para mostrar en el modal
             from app.database.db_manager import DatabaseManager
             db = DatabaseManager()
             solution = db.get_solution_by_id(solution_id)
