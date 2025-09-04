@@ -182,45 +182,6 @@
     </div>
 </div>
 
-<!-- Quick Actions Panel -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="fas fa-bolt"></i> Quick Actions
-                </h5>
-                <div class="row">
-                    <div class="col-md-3">
-                        <a href="{{ url_for('main.add_solution') }}" class="btn btn-success w-100 mb-2">
-                            <i class="fas fa-plus-circle"></i><br>
-                            Add New Solution
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="{{ url_for('main.modify_file') }}" class="btn btn-info w-100 mb-2">
-                            <i class="fas fa-file-code"></i><br>
-                            Modify File
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="{{ url_for('main.solutions') }}" class="btn btn-primary w-100 mb-2">
-                            <i class="fas fa-database"></i><br>
-                            Browse All Solutions
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="{{ url_for('main.home', limit=100) }}" class="btn btn-secondary w-100 mb-2">
-                            <i class="fas fa-list"></i><br>
-                            Show More Results
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block scripts %}

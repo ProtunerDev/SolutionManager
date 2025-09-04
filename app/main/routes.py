@@ -210,7 +210,6 @@ def upload_file():
             session['ori2_base_name'] = os.path.splitext(filename)[0]
         
         logger.info(f"✅ Archivo {filename} ({file_type}) guardado temporalmente en: {temp_file_path}")
-        flash(f'{file_type.upper()} file uploaded successfully!', 'success')
         
         session.modified = True
         
@@ -233,6 +232,75 @@ def upload_file():
             return redirect(url_for('main.add_solution'))
     else:
         flash(f'Invalid file type. Allowed types: .ori, .mod, .bin, .dtf, .DTF (got: {file.filename})', 'danger')
+    
+    return redirect(url_for('main.add_solution'))
+
+@bp.route('/upload_both_files', methods=['POST'])
+@login_required
+def upload_both_files():
+    """Upload both ORI1 and MOD1 files simultaneously"""
+    # Check if both files are present
+    if 'ori1_file' not in request.files or 'mod1_file' not in request.files:
+        flash('Both ORI1 and MOD1 files are required', 'danger')
+        return redirect(url_for('main.add_solution'))
+    
+    ori1_file = request.files['ori1_file']
+    mod1_file = request.files['mod1_file']
+    
+    # Check if both files were selected
+    if ori1_file.filename == '' or mod1_file.filename == '':
+        flash('Please select both ORI1 and MOD1 files', 'danger')
+        return redirect(url_for('main.add_solution'))
+    
+    # Validate file extensions
+    allowed_extensions = {'.ori', '.mod', '.bin', '.dtf', '.DTF'}
+    
+    def is_allowed_file(filename):
+        return any(filename.lower().endswith(ext.lower()) for ext in allowed_extensions)
+    
+    if not is_allowed_file(ori1_file.filename):
+        flash(f'Invalid ORI1 file type. Allowed types: .ori, .mod, .bin, .dtf, .DTF (got: {ori1_file.filename})', 'danger')
+        return redirect(url_for('main.add_solution'))
+    
+    if not is_allowed_file(mod1_file.filename):
+        flash(f'Invalid MOD1 file type. Allowed types: .ori, .mod, .bin, .dtf, .DTF (got: {mod1_file.filename})', 'danger')
+        return redirect(url_for('main.add_solution'))
+    
+    try:
+        # Initialize session files if not exists
+        if 'files' not in session:
+            session['files'] = {}
+        
+        # Process both files
+        files_processed = []
+        
+        for file, file_type in [(ori1_file, 'ori1'), (mod1_file, 'mod1')]:
+            # Generate unique temp directory
+            if 'temp_session_id' not in session:
+                session['temp_session_id'] = str(uuid.uuid4())
+            
+            temp_dir = os.path.join(tempfile.gettempdir(), 'solutionmanager', session['temp_session_id'])
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            # Save file temporarily
+            filename = secure_filename(file.filename)
+            temp_file_path = os.path.join(temp_dir, f"{file_type}_{filename}")
+            file.save(temp_file_path)
+            
+            # Store in session
+            session['files'][file_type] = {'filename': filename}
+            files_processed.append(f"{file_type.upper()}: {filename}")
+            
+            logger.info(f"✅ Archivo {filename} ({file_type}) guardado temporalmente en: {temp_file_path}")
+        
+        session.modified = True
+        
+        # Success message
+        flash(f'Both files uploaded successfully! {" | ".join(files_processed)}', 'success')
+        
+    except Exception as e:
+        logger.error(f"Error uploading files: {str(e)}")
+        flash('Error uploading files. Please try again.', 'danger')
     
     return redirect(url_for('main.add_solution'))
 

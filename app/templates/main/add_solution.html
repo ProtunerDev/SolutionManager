@@ -11,54 +11,43 @@
                 <h4>Upload Binary Files</h4>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header">ORI1 File</div>
-                            <div class="card-body">
-                                <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_file') }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <input type="hidden" name="file_type" value="ori1">
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_both_files') }}" id="uploadForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">ORI1 File</div>
+                                <div class="card-body">
                                     <div class="mb-3">
                                         <label for="ori1File" class="form-label">Select ORI1 File</label>
-                                        <input class="form-control" type="file" id="ori1File" name="file" 
+                                        <input class="form-control" type="file" id="ori1File" name="ori1_file" 
                                                accept=".ori,.mod,.bin,.dtf,.DTF" required>
                                         <div class="form-text">Accepted formats: .ori, .mod, .bin, .dtf, .DTF</div>
                                     </div>
-                                    <button type="submit" class="btn btn-primary">Upload</button>
-                                </form>
-                                {% if session.get('files') and session['files'].get('ori1') %}
-                                <div class="alert alert-success mt-3">
-                                    ORI1 file uploaded
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header">MOD1 File</div>
-                            <div class="card-body">
-                                <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_file') }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <input type="hidden" name="file_type" value="mod1">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">MOD1 File</div>
+                                <div class="card-body">
                                     <div class="mb-3">
                                         <label for="mod1File" class="form-label">Select MOD1 File</label>
-                                        <input class="form-control" type="file" id="mod1File" name="file" 
+                                        <input class="form-control" type="file" id="mod1File" name="mod1_file" 
                                                accept=".ori,.mod,.bin,.dtf,.DTF" required>
                                         <div class="form-text">Accepted formats: .ori, .mod, .bin, .dtf, .DTF</div>
                                     </div>
-                                    <button type="submit" class="btn btn-primary">Upload</button>
-                                </form>
-                                {% if session.get('files') and session['files'].get('mod1') %}
-                                <div class="alert alert-success mt-3">
-                                    MOD1 file uploaded
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-outline-primary" id="uploadButton">
+                            <i class="fas fa-upload me-1"></i> Upload Files
+                        </button>
+                    </div>
+                </form>
                 
                 <div class="mt-3">
                     {% if session.get('files') and session['files'].get('ori1') and session['files'].get('mod1') %}
@@ -270,4 +259,38 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Update button text and state based on file selection
+    function updateUploadButton() {
+        const ori1File = $('#ori1File')[0].files[0];
+        const mod1File = $('#mod1File')[0].files[0];
+        const uploadButton = $('#uploadButton');
+        
+        if (ori1File && mod1File) {
+            uploadButton.removeClass('disabled').prop('disabled', false);
+            uploadButton.html('<i class="fas fa-upload me-1"></i> Upload Files');
+        } else {
+            uploadButton.addClass('disabled').prop('disabled', true);
+            uploadButton.html('<i class="fas fa-upload me-1"></i> Upload Files');
+        }
+    }
+    
+    // File input change events
+    $('#ori1File, #mod1File').on('change', updateUploadButton);
+    
+    // Form submission with loading state
+    $('#uploadForm').on('submit', function() {
+        const uploadButton = $('#uploadButton');
+        uploadButton.prop('disabled', true);
+        uploadButton.html('<i class="fas fa-spinner fa-spin me-1"></i> Uploading...');
+    });
+    
+    // Initialize button state
+    updateUploadButton();
+});
+</script>
 {% endblock %}

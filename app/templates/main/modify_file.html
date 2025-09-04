@@ -5,23 +5,13 @@
         <h3>Modify File</h3>
     </div>
     <div class="card-body">
-
-        <!-- Show upload and other flashed messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
         <!-- Search Solutions Section -->
         <div class="mb-4">
             <h4>Search Solutions</h4>
             <form method="GET" action="{{ url_for('main.modify_file') }}">
-                <!-- Search A -->
+                <!-- First Row -->
                 <div class="row">
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="vehicle_type" class="form-label">Vehicle Type</label>
                         <select class="form-select" id="vehicle_type" name="vehicle_type">
                             <option value="">-- Select --</option>
@@ -29,7 +19,7 @@
                             <option value="Car" {% if request.args.get('vehicle_type') == 'Car' %}selected{% endif %}>Car</option>
                         </select>
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="make" class="form-label">Make</label>
                         <select class="form-select" id="make" name="make">
                             <option value="">-- Select --</option>
@@ -38,7 +28,7 @@
                             {% endif %}
                         </select>
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="model" class="form-label">Model</label>
                         <select class="form-select" id="model" name="model">
                             <option value="">-- Select --</option>
@@ -47,7 +37,7 @@
                             {% endif %}
                         </select>
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="engine" class="form-label">Engine</label>
                         <select class="form-select" id="engine" name="engine">
                             <option value="">-- Select --</option>
@@ -56,7 +46,11 @@
                             {% endif %}
                         </select>
                     </div>
-                    <div class="col-md-2 mb-3">
+                </div>
+
+                <!-- Second Row -->
+                <div class="row">
+                    <div class="col-md-3 mb-3">
                         <label for="ecu_type" class="form-label">ECU Type</label>
                         <select class="form-select" id="ecu_type" name="ecu_type">
                             <option value="">-- Select --</option>
@@ -65,23 +59,21 @@
                             {% endif %}
                         </select>
                     </div>
-                </div>
-
-                <!-- Search B -->
-                <div class="row">
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="hardware_number" class="form-label">Hardware Number</label>
                         <input id="hardware_number" name="hardware_number" class="form-control" value="{{ request.args.get('hardware_number', '') }}">
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="software_number" class="form-label">Software Number</label>
                         <input id="software_number" name="software_number" class="form-control" value="{{ request.args.get('software_number', '') }}">
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="software_update_number" class="form-label">Software Update Number</label>
                         <input id="software_update_number" name="software_update_number" class="form-control" value="{{ request.args.get('software_update_number', '') }}">
                     </div>
                 </div>
+
+                <!-- Third Row -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
                         <label for="year" class="form-label">Year</label>
@@ -92,7 +84,7 @@
                             {% endif %}
                         </select>
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="transmission_type" class="form-label">Transmission Type</label>
                         <select class="form-select" id="transmission_type" name="transmission_type">
                             <option value="">-- Select --</option>
@@ -135,11 +127,6 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
-            {% if session.get('files') and session['files'].get('ori2') %}
-            <div class="alert alert-success mt-3">
-                ORI2 file uploaded
-            </div>
-            {% endif %}
         </div>
         
         <hr>
