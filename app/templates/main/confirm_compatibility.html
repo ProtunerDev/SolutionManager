@@ -94,7 +94,7 @@
                             </tr>
                             <tr>
                                 <td><strong>ORI2 File Size:</strong></td>
-                                <td>{{ compatibility_data.compatibility_result.ori2_file_size|number_format }} bytes</td>
+                                <td>{{ "{:,}".format(compatibility_data.compatibility_result.ori2_file_size) }} bytes</td>
                             </tr>
                         </table>
                     </div>

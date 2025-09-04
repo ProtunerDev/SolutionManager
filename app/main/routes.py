@@ -179,7 +179,31 @@ def upload_file():
         # Mantener compatibilidad con el sistema existente
         if 'files' not in session:
             session['files'] = {}
-        session['files'][file_type] = {'filename': filename}
+        
+        # Para ORI2, necesitamos crear un solution_id temporal para poder almacenarlo en S3
+        if file_type == 'ori2':
+            import time
+            temp_solution_id = f"temp_ori2_{int(time.time())}_{session.get('temp_session_id', 'unknown')}"
+            
+            # Subir archivo ORI2 a S3 con solution_id temporal
+            storage = get_file_storage()
+            try:
+                if storage.store_file(temp_solution_id, 'ori2', filename, file_data):
+                    session['files'][file_type] = {
+                        'filename': filename,
+                        'solution_id': temp_solution_id
+                    }
+                    logger.info(f"✅ ORI2 uploaded to S3 with temp solution_id: {temp_solution_id}")
+                else:
+                    logger.error("Failed to upload ORI2 to S3")
+                    flash('Error uploading ORI2 file to storage', 'danger')
+                    return redirect(url_for('main.modify_file'))
+            except Exception as e:
+                logger.error(f"Exception uploading ORI2 to S3: {e}")
+                flash('Error uploading ORI2 file to storage', 'danger')
+                return redirect(url_for('main.modify_file'))
+        else:
+            session['files'][file_type] = {'filename': filename}
         
         # Store original filename for MOD2
         if file_type == 'ori2':
@@ -791,6 +815,7 @@ def apply_solution(solution_id):
             compatibility_result['total_points'] = compatibility_result['total_bytes']
             compatibility_result['incompatible_points'] = []  # No hay detalles específicos de puntos incompatibles con similitud
             compatibility_result['analysis_type'] = 'similarity_based'
+            compatibility_result['ori2_file_size'] = len(ori2_file_data)  # Agregar tamaño del archivo ORI2
             
             # Obtener información de la solución para mostrar en el modal
             from app.database.db_manager import DatabaseManager

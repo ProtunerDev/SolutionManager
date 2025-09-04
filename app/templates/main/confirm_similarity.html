@@ -62,19 +62,19 @@
                         <table class="table table-sm">
                             <tr>
                                 <td><strong>Identical Bytes:</strong></td>
-                                <td>{{ similarity_data.similarity_result.identical_bytes|number_format }}</td>
+                                <td>{{ "{:,}".format(similarity_data.similarity_result.identical_bytes) }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Total Bytes Compared:</strong></td>
-                                <td>{{ similarity_data.similarity_result.total_bytes|number_format }}</td>
+                                <td>{{ "{:,}".format(similarity_data.similarity_result.total_bytes) }}</td>
                             </tr>
                             <tr>
                                 <td><strong>ORI1 File Size:</strong></td>
-                                <td>{{ similarity_data.similarity_result.file1_size|number_format }} bytes</td>
+                                <td>{{ "{:,}".format(similarity_data.similarity_result.file1_size) }} bytes</td>
                             </tr>
                             <tr>
                                 <td><strong>ORI2 File Size:</strong></td>
-                                <td>{{ similarity_data.similarity_result.file2_size|number_format }} bytes</td>
+                                <td>{{ "{:,}".format(similarity_data.similarity_result.file2_size) }} bytes</td>
                             </tr>
                             <tr>
                                 <td><strong>Size Match:</strong></td>
