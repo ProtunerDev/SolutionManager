@@ -742,6 +742,11 @@ def apply_solution(solution_id):
         
         # Obtener archivo ORI2 desde S3
         ori2_info = session['files']['ori2']
+        if not ori2_info or 'solution_id' not in ori2_info:
+            logger.error(f"ORI2 info missing or invalid: {ori2_info}")
+            flash('ORI2 file information is missing. Please upload ORI2 file first.', 'warning')
+            return redirect(url_for('main.modify_file'))
+        
         ori2_filename, ori2_file_data = storage.get_file(ori2_info['solution_id'], 'ori2')
         
         if not ori2_file_data:
@@ -888,6 +893,11 @@ def apply_solution_confirmed(solution_id):
         
         # Obtener archivo ORI2 desde S3
         ori2_info = session['files']['ori2']
+        if not ori2_info or 'solution_id' not in ori2_info:
+            logger.error(f"ORI2 info missing or invalid in apply_solution_confirmed: {ori2_info}")
+            flash('ORI2 file information is missing. Please upload ORI2 file first.', 'warning')
+            return redirect(url_for('main.modify_file'))
+        
         ori2_filename, ori2_file_data = storage.get_file(ori2_info['solution_id'], 'ori2')
         
         if not ori2_file_data:
@@ -920,21 +930,25 @@ def apply_solution_confirmed(solution_id):
                     mod2_data = f.read()
                 
                 # Guardar MOD2 en S3
-                mod2_stored = storage.store_file(ori2_info['solution_id'], 'mod2', mod2_filename, mod2_data)
-                
-                if mod2_stored:
-                    if 'files' not in session:
-                        session['files'] = {}
-                    session['files']['mod2'] = {'solution_id': ori2_info['solution_id'], 'filename': mod2_filename}
+                if ori2_info and 'solution_id' in ori2_info:
+                    mod2_stored = storage.store_file(ori2_info['solution_id'], 'mod2', mod2_filename, mod2_data)
                     
-                    # Limpiar datos de compatibilidad de la sesión
-                    session.pop('compatibility_check', None)
-                    session.modified = True
-                    
-                    flash('Solution applied successfully', 'success')
-                    return redirect(url_for('main.choose_mod2_filename'))
+                    if mod2_stored:
+                        if 'files' not in session:
+                            session['files'] = {}
+                        session['files']['mod2'] = {'solution_id': ori2_info['solution_id'], 'filename': mod2_filename}
+                        
+                        # Limpiar datos de compatibilidad de la sesión
+                        session.pop('compatibility_check', None)
+                        session.modified = True
+                        
+                        flash('Solution applied successfully', 'success')
+                        return redirect(url_for('main.choose_mod2_filename'))
+                    else:
+                        flash('Error storing MOD2 file', 'danger')
                 else:
-                    flash('Error storing MOD2 file', 'danger')
+                    logger.error("ORI2 info missing when trying to store MOD2")
+                    flash('Error storing MOD2 file - ORI2 information missing', 'danger')
             else:
                 flash('Error applying solution', 'danger')
         
@@ -1060,6 +1074,11 @@ def download_mod2():
     
     try:
         mod2_info = session['files']['mod2']
+        if not mod2_info or 'solution_id' not in mod2_info:
+            logger.error(f"MOD2 info missing or invalid: {mod2_info}")
+            flash('MOD2 file information is missing', 'warning')
+            return redirect(url_for('main.solutions'))
+        
         storage = get_file_storage()
         
         # Descargar archivo desde S3
