@@ -2,45 +2,45 @@
 {% block content %}
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h3>Modify File</h3>
+        <h3>{{ _('Modify File') }}</h3>
     </div>
     <div class="card-body">
         <!-- Search Solutions Section -->
         <div class="mb-4">
-            <h4>Search Solutions</h4>
+            <h4>{{ _('Search Solutions') }}</h4>
             <form method="GET" action="{{ url_for('main.modify_file') }}">
                 <!-- First Row -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                        <label for="vehicle_type" class="form-label">{{ _('Vehicle Type') }}</label>
                         <select class="form-select" id="vehicle_type" name="vehicle_type">
-                            <option value="">-- Select --</option>
-                            <option value="SUV" {% if request.args.get('vehicle_type') == 'SUV' %}selected{% endif %}>SUV</option>
-                            <option value="Car" {% if request.args.get('vehicle_type') == 'Car' %}selected{% endif %}>Car</option>
+                            <option value="">-- {{ _('Select') }} --</option>
+                            <option value="SUV" {% if request.args.get('vehicle_type') == 'SUV' %}selected{% endif %}>{{ _('SUV') }}</option>
+                            <option value="Car" {% if request.args.get('vehicle_type') == 'Car' %}selected{% endif %}>{{ _('Car') }}</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="make" class="form-label">Make</label>
+                        <label for="make" class="form-label">{{ _('Vehicle Make') }}</label>
                         <select class="form-select" id="make" name="make">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                             {% if request.args.get('make') %}
                             <option value="{{ request.args.get('make') }}" selected>{{ request.args.get('make') }}</option>
                             {% endif %}
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="model" class="form-label">Model</label>
+                        <label for="model" class="form-label">{{ _('Vehicle Model') }}</label>
                         <select class="form-select" id="model" name="model">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                             {% if request.args.get('model') %}
                             <option value="{{ request.args.get('model') }}" selected>{{ request.args.get('model') }}</option>
                             {% endif %}
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="engine" class="form-label">Engine</label>
+                        <label for="engine" class="form-label">{{ _('Engine') }}</label>
                         <select class="form-select" id="engine" name="engine">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                             {% if request.args.get('engine') %}
                             <option value="{{ request.args.get('engine') }}" selected>{{ request.args.get('engine') }}</option>
                             {% endif %}
@@ -51,24 +51,24 @@
                 <!-- Second Row -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label for="ecu_type" class="form-label">ECU Type</label>
+                        <label for="ecu_type" class="form-label">{{ _('ECU Type') }}</label>
                         <select class="form-select" id="ecu_type" name="ecu_type">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                             {% if request.args.get('ecu_type') %}
                             <option value="{{ request.args.get('ecu_type') }}" selected>{{ request.args.get('ecu_type') }}</option>
                             {% endif %}
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="hardware_number" class="form-label">Hardware Number</label>
+                        <label for="hardware_number" class="form-label">{{ _('Hardware Number') }}</label>
                         <input id="hardware_number" name="hardware_number" class="form-control" value="{{ request.args.get('hardware_number', '') }}">
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="software_number" class="form-label">Software Number</label>
+                        <label for="software_number" class="form-label">{{ _('Software Number') }}</label>
                         <input id="software_number" name="software_number" class="form-control" value="{{ request.args.get('software_number', '') }}">
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="software_update_number" class="form-label">Software Update Number</label>
+                        <label for="software_update_number" class="form-label">{{ _('Software Update Number') }}</label>
                         <input id="software_update_number" name="software_update_number" class="form-control" value="{{ request.args.get('software_update_number', '') }}">
                     </div>
                 </div>
@@ -76,25 +76,25 @@
                 <!-- Third Row -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label for="year" class="form-label">Year</label>
+                        <label for="year" class="form-label">{{ _('Year') }}</label>
                         <select class="form-select" id="year" name="year">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                             {% if request.args.get('year') %}
                             <option value="{{ request.args.get('year') }}" selected>{{ request.args.get('year') }}</option>
                             {% endif %}
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="transmission_type" class="form-label">Transmission Type</label>
+                        <label for="transmission_type" class="form-label">{{ _('Transmission Type') }}</label>
                         <select class="form-select" id="transmission_type" name="transmission_type">
-                            <option value="">-- Select --</option>
-                            <option value="Automatic" {% if request.args.get('transmission_type') == 'Automatic' %}selected{% endif %}>Automatic</option>
-                            <option value="Manual" {% if request.args.get('transmission_type') == 'Manual' %}selected{% endif %}>Manual</option>
+                            <option value="">-- {{ _('Select') }} --</option>
+                            <option value="Automatic" {% if request.args.get('transmission_type') == 'Automatic' %}selected{% endif %}>{{ _('Automatic') }}</option>
+                            <option value="Manual" {% if request.args.get('transmission_type') == 'Manual' %}selected{% endif %}>{{ _('Manual') }}</option>
                         </select>
                     </div>
                     <div class="col-md-6 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary mb-3">Search</button>
-                        <a href="{{ url_for('main.modify_file') }}" class="btn btn-secondary mb-3 ms-2">Clear</a>
+                        <button type="submit" class="btn btn-primary mb-3">{{ _('Search') }}</button>
+                        <a href="{{ url_for('main.modify_file') }}" class="btn btn-secondary mb-3 ms-2">{{ _('Clear') }}</a>
                     </div>
                 </div>
             </form>
@@ -104,7 +104,7 @@
         
         <!-- Upload ORI2 File Section -->
         <div class="mt-4 mb-4">
-            <h4>Upload ORI2 File</h4>
+            <h4>{{ _('Upload ORI2 File') }}</h4>
             <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_file') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="file_type" value="ori2">
@@ -120,12 +120,12 @@
                 <input type="hidden" name="year" value="{{ request.args.get('year', '') }}">
                 <input type="hidden" name="transmission_type" value="{{ request.args.get('transmission_type', '') }}">
                 <div class="mb-3">
-                    <label for="ori2File" class="form-label">Select ORI2 File</label>
+                    <label for="ori2File" class="form-label">{{ _('Select ORI2 File') }}</label>
                     <input class="form-control" type="file" id="ori2File" name="file" 
                            accept=".ori,.mod,.bin,.dtf,.DTF" required>
-                    <div class="form-text">Accepted formats: .ori, .mod, .bin, .dtf, .DTF</div>
+                    <div class="form-text">{{ _('Accepted formats') }}: .ori, .mod, .bin, .dtf, .DTF</div>
                 </div>
-                <button type="submit" class="btn btn-primary">Upload</button>
+                <button type="submit" class="btn btn-primary">{{ _('Upload') }}</button>
             </form>
         </div>
         
@@ -133,60 +133,60 @@
         
         <!-- Results Section -->
         <div class="mt-4">
-            <h4>Results</h4>
+            <h4>{{ _('Results') }}</h4>
             {% if not search_performed %}
                 <div class="alert alert-info">
-                    Use the search form above to find solutions.
+                    {{ _('Use the search form above to find solutions.') }}
                 </div>
             {% elif solutions %}
                 {% for solution in solutions %}
                 <div class="card solution-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5>Solution #{{ solution.id }}</h5>
+                        <h5>{{ _('Solution') }} #{{ solution.id }}</h5>
                         <div>
-                            <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" class="btn btn-sm btn-info">View</a>
+                            <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" class="btn btn-sm btn-info">{{ _('View') }}</a>
                             {% if session.get('files') and session['files'].get('ori2') %}
                             <form method="POST" action="{{ url_for('main.apply_solution', solution_id=solution.id) }}" class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                <button type="submit" class="btn btn-sm btn-success">Apply Solution</button>
+                                <button type="submit" class="btn btn-sm btn-success">{{ _('Apply Solution') }}</button>
                             </form>
                             {% else %}
-                            <button class="btn btn-sm btn-success disabled" disabled>Apply Solution</button>
+                            <button class="btn btn-sm btn-success disabled" disabled>{{ _('Apply Solution') }}</button>
                             {% endif %}
                         </div>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong>Vehicle:</strong> {{ solution.vehicle_type }} {{ solution.make }} {{ solution.model }}</p>
-                                <p><strong>Engine:</strong> {{ solution.engine }}</p>
-                                <p><strong>Year:</strong> {{ solution.year }}</p>
+                                <p><strong>{{ _('Vehicle') }}:</strong> {{ solution.vehicle_type }} {{ solution.make }} {{ solution.model }}</p>
+                                <p><strong>{{ _('Engine') }}:</strong> {{ solution.engine }}</p>
+                                <p><strong>{{ _('Year') }}:</strong> {{ solution.year }}</p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>ECU Type:</strong> {{ solution.ecu_type }}</p>
-                                <p><strong>Hardware:</strong> {{ solution.hardware_number }}</p>
-                                <p><strong>Software:</strong> {{ solution.software_number }} ({{ solution.software_update_number }})</p>
+                                <p><strong>{{ _('ECU Type') }}:</strong> {{ solution.ecu_type }}</p>
+                                <p><strong>{{ _('Hardware') }}:</strong> {{ solution.hardware_number }}</p>
+                                <p><strong>{{ _('Software') }}:</strong> {{ solution.software_number }} ({{ solution.software_update_number }})</p>
                             </div>
                         </div>
                         <div class="solution-types">
-                            {% if solution.stage_1 %}<span>Stage 1</span>{% endif %}
-                            {% if solution.stage_2 %}<span>Stage 2</span>{% endif %}
-                            {% if solution.pop_and_bangs %}<span>Pop and Bangs</span>{% endif %}
-                            {% if solution.vmax %}<span>Vmax</span>{% endif %}
-                            {% if solution.dtc_off %}<span>DTC Off</span>{% endif %}
-                            {% if solution.full_decat %}<span>Full Decat</span>{% endif %}
-                            {% if solution.immo_off %}<span>Immo Off</span>{% endif %}
-                            {% if solution.evap_off %}<span>Evap Off</span>{% endif %}
-                            {% if solution.tva %}<span>TVA</span>{% endif %}
-                            {% if solution.egr_off %}<span>EGR Off</span>{% endif %}
-                            {% if solution.dpf_off %}<span>DPF Off</span>{% endif %}
-                            {% if solution.egr_dpf_off %}<span>EGR + DPF Off</span>{% endif %}
-                            {% if solution.adblue_off %}<span>AdBlue Off</span>{% endif %}
-                            {% if solution.egr_dpf_adblue_off %}<span>EGR + DPF + AdBlue Off</span>{% endif %}
+                            {% if solution.stage_1 %}<span>{{ _('Stage 1') }}</span>{% endif %}
+                            {% if solution.stage_2 %}<span>{{ _('Stage 2') }}</span>{% endif %}
+                            {% if solution.pop_and_bangs %}<span>{{ _('Pop and Bangs') }}</span>{% endif %}
+                            {% if solution.vmax %}<span>{{ _('Vmax') }}</span>{% endif %}
+                            {% if solution.dtc_off %}<span>{{ _('DTC Off') }}</span>{% endif %}
+                            {% if solution.full_decat %}<span>{{ _('Full Decat') }}</span>{% endif %}
+                            {% if solution.immo_off %}<span>{{ _('Immo Off') }}</span>{% endif %}
+                            {% if solution.evap_off %}<span>{{ _('Evap Off') }}</span>{% endif %}
+                            {% if solution.tva %}<span>{{ _('TVA') }}</span>{% endif %}
+                            {% if solution.egr_off %}<span>{{ _('EGR Off') }}</span>{% endif %}
+                            {% if solution.dpf_off %}<span>{{ _('DPF Off') }}</span>{% endif %}
+                            {% if solution.egr_dpf_off %}<span>{{ _('EGR + DPF Off') }}</span>{% endif %}
+                            {% if solution.adblue_off %}<span>{{ _('AdBlue Off') }}</span>{% endif %}
+                            {% if solution.egr_dpf_adblue_off %}<span>{{ _('EGR + DPF + AdBlue Off') }}</span>{% endif %}
                         </div>
                         {% if solution.description %}
                         <div class="mt-3">
-                            <p><strong>Description:</strong> {{ solution.description }}</p>
+                            <p><strong>{{ _('Description') }}:</strong> {{ solution.description }}</p>
                         </div>
                         {% endif %}
                     </div>
@@ -194,7 +194,7 @@
                 {% endfor %}
             {% else %}
                 <div class="alert alert-info">
-                    No solutions found matching your criteria.
+                    {{ _('No solutions found matching your criteria.') }}
                 </div>
             {% endif %}
         </div>

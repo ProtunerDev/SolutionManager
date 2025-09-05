@@ -239,6 +239,9 @@ def upload_file():
 @login_required
 def upload_both_files():
     """Upload both ORI1 and MOD1 files simultaneously"""
+    logger.info("=== UPLOAD_BOTH_FILES ROUTE CALLED ===")
+    logger.info(f"Request files: {list(request.files.keys())}")
+    
     # Check if both files are present
     if 'ori1_file' not in request.files or 'mod1_file' not in request.files:
         flash('Both ORI1 and MOD1 files are required', 'danger')
@@ -267,9 +270,9 @@ def upload_both_files():
         return redirect(url_for('main.add_solution'))
     
     try:
-        # Initialize session files if not exists
-        if 'files' not in session:
-            session['files'] = {}
+        # Initialize session uploaded_files if not exists (consistency with compare_files)
+        if 'uploaded_files' not in session:
+            session['uploaded_files'] = {}
         
         # Process both files
         files_processed = []
@@ -287,8 +290,11 @@ def upload_both_files():
             temp_file_path = os.path.join(temp_dir, f"{file_type}_{filename}")
             file.save(temp_file_path)
             
-            # Store in session
-            session['files'][file_type] = {'filename': filename}
+            # Store in session with the structure expected by compare_files
+            session['uploaded_files'][file_type] = {
+                'filename': filename,
+                'temp_path': temp_file_path
+            }
             files_processed.append(f"{file_type.upper()}: {filename}")
             
             logger.info(f"✅ Archivo {filename} ({file_type}) guardado temporalmente en: {temp_file_path}")
@@ -297,6 +303,7 @@ def upload_both_files():
         
         # Success message
         flash(f'Both files uploaded successfully! {" | ".join(files_processed)}', 'success')
+        logger.info(f"✅ Upload successful - Session uploaded_files: {session.get('uploaded_files', {}).keys()}")
         
     except Exception as e:
         logger.error(f"Error uploading files: {str(e)}")
@@ -312,6 +319,9 @@ def compare_files():
     
     POST: Process comparison request and redirect back to add_solution
     """
+    logger.info("=== COMPARE_FILES ROUTE CALLED ===")
+    logger.info(f"Session uploaded_files: {session.get('uploaded_files', {})}")
+    
     if 'uploaded_files' not in session or 'ori1' not in session['uploaded_files'] or 'mod1' not in session['uploaded_files']:
         flash('Please upload ORI1 and MOD1 files first', 'warning')
         return redirect(url_for('main.add_solution'))
@@ -522,6 +532,10 @@ def add_solution():
     POST: Process add solution request
     """
     logger.info("=== ADD_SOLUTION ROUTE CALLED ===")
+    logger.info(f"Request method: {request.method}")
+    logger.info(f"Session keys: {list(session.keys())}")
+    logger.info(f"Session uploaded_files: {session.get('uploaded_files', 'NOT_FOUND')}")
+    
     try:
         if request.method == 'POST':
             logger.info("Processing POST request for add_solution")
@@ -1302,3 +1316,18 @@ def s3_status():
     except Exception as e:
         flash(f'Error verificando estado S3: {str(e)}', 'error')
         return redirect(url_for('main.index'))
+
+@bp.route('/set_language/<language>')
+@login_required
+def set_language(language):
+    """Set user's preferred language"""
+    from app.i18n import set_user_language, _
+    from flask import request, redirect, url_for
+    
+    if set_user_language(language):
+        pass  # Language updated silently
+    else:
+        flash(_('Invalid language selection'), 'error')
+    
+    # Redirect back to the page the user came from
+    return redirect(request.referrer or url_for('main.home'))

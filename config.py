@@ -15,6 +15,14 @@ class Config:
     # App URL for redirects
     APP_URL = os.environ.get('APP_URL') or 'http://127.0.0.1:5000'
     
+    # Internationalization
+    LANGUAGES = {
+        'en': 'English',
+        'es': 'Español'
+    }
+    BABEL_DEFAULT_LOCALE = 'en'
+    BABEL_DEFAULT_TIMEZONE = 'UTC'
+    
     # Supabase
     SUPABASE_URL = os.environ.get('SUPABASE_URL')
     SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY') 

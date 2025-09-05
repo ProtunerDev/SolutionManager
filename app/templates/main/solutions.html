@@ -2,37 +2,37 @@
 {% block content %}
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h3>Solutions</h3>
-        <a href="{{ url_for('main.add_solution') }}" class="btn btn-success">Add Solution</a>
+        <h3>{{ _('Solutions') }}</h3>
+        <a href="{{ url_for('main.add_solution') }}" class="btn btn-success">{{ _('Add Solution') }}</a>
     </div>
     <div class="card-body">
         <div class="mb-4">
-            <h4>Search Solutions</h4>
+            <h4>{{ _('Search Solutions') }}</h4>
             <form method="GET" action="{{ url_for('main.solutions') }}">
                 <!-- First Row -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                        <label for="vehicle_type" class="form-label">{{ _('Vehicle Type') }}</label>
                         <select class="form-select" id="vehicle_type" name="vehicle_type">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="make" class="form-label">Make</label>
+                        <label for="make" class="form-label">{{ _('Vehicle Make') }}</label>
                         <select class="form-select" id="make" name="make">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="model" class="form-label">Model</label>
+                        <label for="model" class="form-label">{{ _('Vehicle Model') }}</label>
                         <select class="form-select" id="model" name="model">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="engine" class="form-label">Engine</label>
+                        <label for="engine" class="form-label">{{ _('Engine') }}</label>
                         <select class="form-select" id="engine" name="engine">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                         </select>
                     </div>
                 </div>
@@ -40,21 +40,21 @@
                 <!-- Second Row -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label for="ecu_type" class="form-label">ECU Type</label>
+                        <label for="ecu_type" class="form-label">{{ _('ECU Type') }}</label>
                         <select class="form-select" id="ecu_type" name="ecu_type">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="hardware_number" class="form-label">Hardware Number</label>
+                        <label for="hardware_number" class="form-label">{{ _('Hardware Number') }}</label>
                         <input id="hardware_number" name="hardware_number" class="form-control">
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="software_number" class="form-label">Software Number</label>
+                        <label for="software_number" class="form-label">{{ _('Software Number') }}</label>
                         <input id="software_number" name="software_number" class="form-control">
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="software_update_number" class="form-label">Software Update Number</label>
+                        <label for="software_update_number" class="form-label">{{ _('Software Update Number') }}</label>
                         <input id="software_update_number" name="software_update_number" class="form-control">
                     </div>
                 </div>
@@ -62,22 +62,22 @@
                 <!-- Third Row -->
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label for="year" class="form-label">Year</label>
+                        <label for="year" class="form-label">{{ _('Year') }}</label>
                         <select class="form-select" id="year" name="year">
-                            <option value="">-- Select --</option>
+                            <option value="">-- {{ _('Select') }} --</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label for="transmission_type" class="form-label">Transmission Type</label>
+                        <label for="transmission_type" class="form-label">{{ _('Transmission Type') }}</label>
                         <select class="form-select" id="transmission_type" name="transmission_type">
-                            <option value="">-- Select --</option>
-                            <option value="Automatic">Automatic</option>
-                            <option value="Manual">Manual</option>
+                            <option value="">-- {{ _('Select') }} --</option>
+                            <option value="Automatic">{{ _('Automatic') }}</option>
+                            <option value="Manual">{{ _('Manual') }}</option>
                         </select>
                     </div>
                     <div class="col-md-6 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary mb-3">Search</button>
-                        <a href="{{ url_for('main.solutions') }}" class="btn btn-secondary mb-3 ms-2">Clear</a>
+                        <button type="submit" class="btn btn-primary mb-3">{{ _('Search') }}</button>
+                        <a href="{{ url_for('main.solutions') }}" class="btn btn-secondary mb-3 ms-2">{{ _('Clear') }}</a>
                     </div>
                 </div>
             </form>
@@ -86,53 +86,53 @@
         <hr>
         
         <div class="mt-4">
-            <h4>Results</h4>
+            <h4>{{ _('Results') }}</h4>
             {% if not search_performed %}
                 <div class="alert alert-info">
-                    Use the search form above to find solutions.
+                    {{ _('Use the search form above to find solutions.') }}
                 </div>
             {% elif solutions %}
                 {% for solution in solutions %}
                 <div class="card solution-card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5>Solution #{{ solution.id }}</h5>
+                        <h5>{{ _('Solution') }} #{{ solution.id }}</h5>
                         <div>
-                            <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" class="btn btn-sm btn-info">View</a>
-                            <a href="{{ url_for('main.modify_file', vehicle_type=solution.vehicle_type, make=solution.make, model=solution.model, engine=solution.engine, ecu_type=solution.ecu_type, hardware_number=solution.hardware_number, software_number=solution.software_number, software_update_number=solution.software_update_number, year=solution.year, transmission_type=solution.transmission_type) }}" class="btn btn-sm btn-success">Apply</a>
+                            <a href="{{ url_for('main.solution_detail', solution_id=solution.id) }}" class="btn btn-sm btn-info">{{ _('View') }}</a>
+                            <a href="{{ url_for('main.modify_file', vehicle_type=solution.vehicle_type, make=solution.make, model=solution.model, engine=solution.engine, ecu_type=solution.ecu_type, hardware_number=solution.hardware_number, software_number=solution.software_number, software_update_number=solution.software_update_number, year=solution.year, transmission_type=solution.transmission_type) }}" class="btn btn-sm btn-success">{{ _('Apply') }}</a>
                         </div>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong>Vehicle:</strong> {{ solution.vehicle_type }} {{ solution.make }} {{ solution.model }}</p>
-                                <p><strong>Engine:</strong> {{ solution.engine }}</p>
-                                <p><strong>Year:</strong> {{ solution.year }}</p>
+                                <p><strong>{{ _('Vehicle') }}:</strong> {{ solution.vehicle_type }} {{ solution.make }} {{ solution.model }}</p>
+                                <p><strong>{{ _('Engine') }}:</strong> {{ solution.engine }}</p>
+                                <p><strong>{{ _('Year') }}:</strong> {{ solution.year }}</p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>ECU Type:</strong> {{ solution.ecu_type }}</p>
-                                <p><strong>Hardware:</strong> {{ solution.hardware_number }}</p>
-                                <p><strong>Software:</strong> {{ solution.software_number }} ({{ solution.software_update_number }})</p>
+                                <p><strong>{{ _('ECU Type') }}:</strong> {{ solution.ecu_type }}</p>
+                                <p><strong>{{ _('Hardware') }}:</strong> {{ solution.hardware_number }}</p>
+                                <p><strong>{{ _('Software') }}:</strong> {{ solution.software_number }} ({{ solution.software_update_number }})</p>
                             </div>
                         </div>
                         <div class="solution-types mb-3">
-                            {% if solution.stage_1 %}<span class="badge bg-primary me-1">Stage 1</span>{% endif %}
-                            {% if solution.stage_2 %}<span class="badge bg-primary me-1">Stage 2</span>{% endif %}
-                            {% if solution.pop_and_bangs %}<span class="badge bg-warning me-1">Pop and Bangs</span>{% endif %}
-                            {% if solution.vmax %}<span class="badge bg-info me-1">Vmax</span>{% endif %}
-                            {% if solution.dtc_off %}<span class="badge bg-secondary me-1">DTC Off</span>{% endif %}
-                            {% if solution.full_decat %}<span class="badge bg-danger me-1">Full Decat</span>{% endif %}
-                            {% if solution.immo_off %}<span class="badge bg-dark me-1">Immo Off</span>{% endif %}
-                            {% if solution.evap_off %}<span class="badge bg-secondary me-1">Evap Off</span>{% endif %}
-                            {% if solution.tva %}<span class="badge bg-success me-1">TVA</span>{% endif %}
-                            {% if solution.egr_off %}<span class="badge bg-warning me-1">EGR Off</span>{% endif %}
-                            {% if solution.dpf_off %}<span class="badge bg-danger me-1">DPF Off</span>{% endif %}
-                            {% if solution.egr_dpf_off %}<span class="badge bg-danger me-1">EGR + DPF Off</span>{% endif %}
-                            {% if solution.adblue_off %}<span class="badge bg-info me-1">AdBlue Off</span>{% endif %}
-                            {% if solution.egr_dpf_adblue_off %}<span class="badge bg-danger me-1">EGR + DPF + AdBlue Off</span>{% endif %}
+                            {% if solution.stage_1 %}<span class="badge bg-primary me-1">{{ _('Stage 1') }}</span>{% endif %}
+                            {% if solution.stage_2 %}<span class="badge bg-primary me-1">{{ _('Stage 2') }}</span>{% endif %}
+                            {% if solution.pop_and_bangs %}<span class="badge bg-warning me-1">{{ _('Pop & Bang') }}</span>{% endif %}
+                            {% if solution.vmax %}<span class="badge bg-info me-1">{{ _('Vmax') }}</span>{% endif %}
+                            {% if solution.dtc_off %}<span class="badge bg-secondary me-1">{{ _('DTC Off') }}</span>{% endif %}
+                            {% if solution.full_decat %}<span class="badge bg-danger me-1">{{ _('Full Decat') }}</span>{% endif %}
+                            {% if solution.immo_off %}<span class="badge bg-dark me-1">{{ _('Immo Off') }}</span>{% endif %}
+                            {% if solution.evap_off %}<span class="badge bg-secondary me-1">{{ _('Evap Off') }}</span>{% endif %}
+                            {% if solution.tva %}<span class="badge bg-success me-1">{{ _('TVA') }}</span>{% endif %}
+                            {% if solution.egr_off %}<span class="badge bg-warning me-1">{{ _('EGR Delete') }}</span>{% endif %}
+                            {% if solution.dpf_off %}<span class="badge bg-danger me-1">{{ _('DPF Delete') }}</span>{% endif %}
+                            {% if solution.egr_dpf_off %}<span class="badge bg-danger me-1">{{ _('EGR + DPF Off') }}</span>{% endif %}
+                            {% if solution.adblue_off %}<span class="badge bg-info me-1">{{ _('AdBlue Delete') }}</span>{% endif %}
+                            {% if solution.egr_dpf_adblue_off %}<span class="badge bg-danger me-1">{{ _('EGR + DPF + AdBlue Off') }}</span>{% endif %}
                         </div>
                         {% if solution.description %}
                         <div class="mt-3">
-                            <p><strong>Description:</strong> {{ solution.description }}</p>
+                            <p><strong>{{ _('Description') }}:</strong> {{ solution.description }}</p>
                         </div>
                         {% endif %}
                     </div>
@@ -140,7 +140,7 @@
                 {% endfor %}
             {% else %}
                 <div class="alert alert-info">
-                    No solutions found matching your criteria.
+                    {{ _('No solutions found matching your criteria.') }}
                 </div>
             {% endif %}
         </div>

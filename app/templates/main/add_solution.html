@@ -2,13 +2,13 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h3>Add Solution</h3>
+        <h3>{{ _('Add Solution') }}</h3>
     </div>
     <div class="card-body">
         <!-- File Upload Section -->
         <div class="card mb-4">
             <div class="card-header">
-                <h4>Upload Binary Files</h4>
+                <h4>{{ _('Upload Files') }}</h4>
             </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_both_files') }}" id="uploadForm">
@@ -16,26 +16,52 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="card mb-3">
-                                <div class="card-header">ORI1 File</div>
+                                <div class="card-header">
+                                    {{ _('ORI1 File') }}
+                                    {% if session.get('uploaded_files') and session['uploaded_files'].get('ori1') %}
+                                    <span class="badge bg-success ms-2">✓ {{ _('Uploaded') }}</span>
+                                    {% endif %}
+                                </div>
                                 <div class="card-body">
                                     <div class="mb-3">
-                                        <label for="ori1File" class="form-label">Select ORI1 File</label>
+                                        <label for="ori1File" class="form-label">{{ _('Select ORI1 File') }}</label>
                                         <input class="form-control" type="file" id="ori1File" name="ori1_file" 
                                                accept=".ori,.mod,.bin,.dtf,.DTF" required>
-                                        <div class="form-text">Accepted formats: .ori, .mod, .bin, .dtf, .DTF</div>
+                                        <div class="form-text">{{ _('Accepted formats') }}: .ori, .mod, .bin, .dtf, .DTF</div>
+                                        {% if session.get('uploaded_files') and session['uploaded_files'].get('ori1') %}
+                                        <div class="mt-2">
+                                            <small class="text-success">
+                                                <i class="fas fa-check-circle"></i> 
+                                                {{ _('Current file') }}: <strong>{{ session['uploaded_files']['ori1']['filename'] }}</strong>
+                                            </small>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card mb-3">
-                                <div class="card-header">MOD1 File</div>
+                                <div class="card-header">
+                                    {{ _('MOD1 File') }}
+                                    {% if session.get('uploaded_files') and session['uploaded_files'].get('mod1') %}
+                                    <span class="badge bg-success ms-2">✓ {{ _('Uploaded') }}</span>
+                                    {% endif %}
+                                </div>
                                 <div class="card-body">
                                     <div class="mb-3">
-                                        <label for="mod1File" class="form-label">Select MOD1 File</label>
+                                        <label for="mod1File" class="form-label">{{ _('Select MOD1 File') }}</label>
                                         <input class="form-control" type="file" id="mod1File" name="mod1_file" 
                                                accept=".ori,.mod,.bin,.dtf,.DTF" required>
-                                        <div class="form-text">Accepted formats: .ori, .mod, .bin, .dtf, .DTF</div>
+                                        <div class="form-text">{{ _('Accepted formats') }}: .ori, .mod, .bin, .dtf, .DTF</div>
+                                        {% if session.get('uploaded_files') and session['uploaded_files'].get('mod1') %}
+                                        <div class="mt-2">
+                                            <small class="text-success">
+                                                <i class="fas fa-check-circle"></i> 
+                                                {{ _('Current file') }}: <strong>{{ session['uploaded_files']['mod1']['filename'] }}</strong>
+                                            </small>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -44,28 +70,33 @@
                     
                     <div class="text-center">
                         <button type="submit" class="btn btn-outline-primary" id="uploadButton">
-                            <i class="fas fa-upload me-1"></i> Upload Files
+                            <i class="fas fa-upload me-1"></i> 
+                            {% if session.get('uploaded_files') and session['uploaded_files'].get('ori1') and session['uploaded_files'].get('mod1') %}
+                            {{ _('Replace Files') }}
+                            {% else %}
+                            {{ _('Upload Files') }}
+                            {% endif %}
                         </button>
                     </div>
                 </form>
                 
                 <div class="mt-3">
-                    {% if session.get('files') and session['files'].get('ori1') and session['files'].get('mod1') %}
+                    {% if session.get('uploaded_files') and session['uploaded_files'].get('ori1') and session['uploaded_files'].get('mod1') %}
                     <form method="POST" action="{{ url_for('main.compare_files') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-3">
-                            <label for="bitSize" class="form-label">Bit Size</label>
+                            <label for="bitSize" class="form-label">{{ _('Bit Size') }}</label>
                             <select class="form-select" id="bitSize" name="bit_size">
                                 <option value="8">8-bit</option>
                                 <option value="16">16-bit</option>
                                 <option value="32">32-bit</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success">Compare Files</button>
+                        <button type="submit" class="btn btn-success">{{ _('Compare Files') }}</button>
                     </form>
                     {% else %}
                     <div class="alert alert-info">
-                        Please upload both ORI1 and MOD1 files to compare them.
+                        {{ _('Please upload both ORI1 and MOD1 files to compare them.') }}
                     </div>
                     {% endif %}
                 </div>
@@ -73,7 +104,7 @@
                 {% if session.get('differences') %}
                 <div class="mt-3">
                     <div class="alert alert-success">
-                        <strong>Files compared successfully!</strong> {{ session.differences|length }} differences found.
+                        <strong>{{ _('Files compared successfully!') }}</strong> {{ session.differences|length }} {{ _('differences found') }}.
                     </div>
                 </div>
                 {% endif %}
@@ -86,42 +117,42 @@
             <!-- Search A -->
             <div class="row">
                 <div class="col-md-2 mb-3">
-                    <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                    <label for="vehicle_type" class="form-label">{{ _('Vehicle Type') }}</label>
                     <select class="form-select" id="vehicle_type" name="vehicle_type">
-                        <option value="">-- Select --</option>
+                        <option value="">-- {{ _('Select') }} --</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="make" class="form-label">Make</label>
+                    <label for="make" class="form-label">{{ _('Vehicle Make') }}</label>
                     <select class="form-select" id="make" name="make">
-                        <option value="">-- Select --</option>
+                        <option value="">-- {{ _('Select') }} --</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="model" class="form-label">Model</label>
+                    <label for="model" class="form-label">{{ _('Vehicle Model') }}</label>
                     <select class="form-select" id="model" name="model">
-                        <option value="">-- Select --</option>
+                        <option value="">-- {{ _('Select') }} --</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="engine" class="form-label">Engine</label>
+                    <label for="engine" class="form-label">{{ _('Engine') }}</label>
                     <select class="form-select" id="engine" name="engine">
-                        <option value="">-- Select --</option>
+                        <option value="">-- {{ _('Select') }} --</option>
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="ecu_type" class="form-label">ECU Type</label>
+                    <label for="ecu_type" class="form-label">{{ _('ECU Type') }}</label>
                     <select class="form-select" id="ecu_type" name="ecu_type">
-                        <option value="">-- Select --</option>
+                        <option value="">-- {{ _('Select') }} --</option>
                         <!-- options populated by JS -->
                     </select>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="transmission_type" class="form-label">Transmission Type</label>
+                    <label for="transmission_type" class="form-label">{{ _('Transmission Type') }}</label>
                     <select class="form-select" id="transmission_type" name="transmission_type">
-                        <option value="">-- Select --</option>
-                        <option value="Automatic">Automatic</option>
-                        <option value="Manual">Manual</option>
+                        <option value="">-- {{ _('Select') }} --</option>
+                        <option value="Automatic">{{ _('Automatic') }}</option>
+                        <option value="Manual">{{ _('Manual') }}</option>
                     </select>
                 </div>
             </div>
@@ -129,109 +160,109 @@
             <!-- Search B -->
             <div class="row">
                 <div class="col-md-2 mb-3">
-                    <label for="hardware_number" class="form-label">Hardware Number</label>
+                    <label for="hardware_number" class="form-label">{{ _('Hardware Number') }}</label>
                     <input id="hardware_number" name="hardware_number" class="form-control">
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="software_number" class="form-label">Software Number</label>
+                    <label for="software_number" class="form-label">{{ _('Software Number') }}</label>
                     <input id="software_number" name="software_number" class="form-control">
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="software_update_number" class="form-label">Software Update Number</label>
+                    <label for="software_update_number" class="form-label">{{ _('Software Update Number') }}</label>
                     <input id="software_update_number" name="software_update_number" class="form-control">
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label for="year" class="form-label">Year</label>
+                    <label for="year" class="form-label">{{ _('Year') }}</label>
                     <input type="number" id="year" name="year" class="form-control" min="1996" max="2100" required>
                 </div>
             </div>
             
             <div class="row mt-3">
                 <div class="col-md-12">
-                    <h4>Solution Types</h4>
+                    <h4>{{ _('Solution Types') }}</h4>
                     <div class="row">
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="stage_1" name="stage_1">
-                                <label class="form-check-label" for="stage_1">Stage 1</label>
+                                <label class="form-check-label" for="stage_1">{{ _('Stage 1') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="stage_2" name="stage_2">
-                                <label class="form-check-label" for="stage_2">Stage 2</label>
+                                <label class="form-check-label" for="stage_2">{{ _('Stage 2') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="pop_and_bangs" name="pop_and_bangs">
-                                <label class="form-check-label" for="pop_and_bangs">Pop and Bangs</label>
+                                <label class="form-check-label" for="pop_and_bangs">{{ _('Pop & Bang') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="vmax" name="vmax">
-                                <label class="form-check-label" for="vmax">Vmax</label>
+                                <label class="form-check-label" for="vmax">{{ _('Vmax') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="dtc_off" name="dtc_off">
-                                <label class="form-check-label" for="dtc_off">DTC Off</label>
+                                <label class="form-check-label" for="dtc_off">{{ _('DTC Off') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="full_decat" name="full_decat">
-                                <label class="form-check-label" for="full_decat">Full Decat</label>
+                                <label class="form-check-label" for="full_decat">{{ _('Full Decat') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="immo_off" name="immo_off">
-                                <label class="form-check-label" for="immo_off">Immo Off</label>
+                                <label class="form-check-label" for="immo_off">{{ _('Immo Off') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="evap_off" name="evap_off">
-                                <label class="form-check-label" for="evap_off">Evap Off</label>
+                                <label class="form-check-label" for="evap_off">{{ _('Evap Off') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="tva" name="tva">
-                                <label class="form-check-label" for="tva">TVA</label>
+                                <label class="form-check-label" for="tva">{{ _('TVA') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="egr_off" name="egr_off">
-                                <label class="form-check-label" for="egr_off">EGR Off</label>
+                                <label class="form-check-label" for="egr_off">{{ _('EGR Delete') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="dpf_off" name="dpf_off">
-                                <label class="form-check-label" for="dpf_off">DPF Off</label>
+                                <label class="form-check-label" for="dpf_off">{{ _('DPF Delete') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="egr_dpf_off" name="egr_dpf_off">
-                                <label class="form-check-label" for="egr_dpf_off">EGR + DPF Off</label>
+                                <label class="form-check-label" for="egr_dpf_off">{{ _('EGR + DPF Off') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="adblue_off" name="adblue_off">
-                                <label class="form-check-label" for="adblue_off">AdBlue Off</label>
+                                <label class="form-check-label" for="adblue_off">{{ _('AdBlue Delete') }}</label>
                             </div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="egr_dpf_adblue_off" name="egr_dpf_adblue_off">
-                                <label class="form-check-label" for="egr_dpf_adblue_off">EGR + DPF + AdBlue Off</label>
+                                <label class="form-check-label" for="egr_dpf_adblue_off">{{ _('EGR + DPF + AdBlue Off') }}</label>
                             </div>
                         </div>
                     </div>
@@ -241,7 +272,7 @@
             <div class="row mt-3">
                 <div class="col-md-12">
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
+                        <label for="description" class="form-label">{{ _('Description') }}</label>
                         <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                     </div>
                 </div>
@@ -249,12 +280,12 @@
             
             <div class="mt-4">
                 {% if session.differences_file %}
-                <button type="submit" class="btn btn-primary">Save Solution</button>
+                <button type="submit" class="btn btn-primary">{{ _('Save Solution') }}</button>
                 {% else %}
-                <button type="button" class="btn btn-primary disabled" disabled>Save Solution</button>
-                <small class="text-muted ms-2">Please upload and compare files first</small>
+                <button type="button" class="btn btn-primary disabled" disabled>{{ _('Save Solution') }}</button>
+                <small class="text-muted ms-2">{{ _('Please upload and compare files first') }}</small>
                 {% endif %}
-                <a href="{{ url_for('main.solutions') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ url_for('main.solutions') }}" class="btn btn-secondary">{{ _('Cancel') }}</a>
             </div>
         </form>
     </div>
@@ -264,6 +295,9 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+    // Check if files are already uploaded from server side
+    const hasUploadedFiles = {% if session.get('uploaded_files') and session['uploaded_files'].get('ori1') and session['uploaded_files'].get('mod1') %}true{% else %}false{% endif %};
+    
     // Update button text and state based on file selection
     function updateUploadButton() {
         const ori1File = $('#ori1File')[0].files[0];
@@ -272,21 +306,40 @@ $(document).ready(function() {
         
         if (ori1File && mod1File) {
             uploadButton.removeClass('disabled').prop('disabled', false);
-            uploadButton.html('<i class="fas fa-upload me-1"></i> Upload Files');
+            if (hasUploadedFiles) {
+                uploadButton.html('<i class="fas fa-upload me-1"></i> {{ _("Replace Files") }}');
+            } else {
+                uploadButton.html('<i class="fas fa-upload me-1"></i> {{ _("Upload Files") }}');
+            }
+        } else if (hasUploadedFiles) {
+            // If files are already uploaded but no new files selected
+            uploadButton.addClass('disabled').prop('disabled', true);
+            uploadButton.html('<i class="fas fa-upload me-1"></i> {{ _("Select new files to replace") }}');
         } else {
             uploadButton.addClass('disabled').prop('disabled', true);
-            uploadButton.html('<i class="fas fa-upload me-1"></i> Upload Files');
+            uploadButton.html('<i class="fas fa-upload me-1"></i> {{ _("Upload Files") }}');
         }
     }
     
     // File input change events
-    $('#ori1File, #mod1File').on('change', updateUploadButton);
+    $('#ori1File, #mod1File').on('change', function() {
+        updateUploadButton();
+        
+        // Show selected filename
+        const fileInput = $(this);
+        const fileName = fileInput[0].files[0] ? fileInput[0].files[0].name : '';
+        const fileType = fileInput.attr('id') === 'ori1File' ? 'ORI1' : 'MOD1';
+        
+        if (fileName) {
+            console.log(`${fileType} file selected: ${fileName}`);
+        }
+    });
     
     // Form submission with loading state
     $('#uploadForm').on('submit', function() {
         const uploadButton = $('#uploadButton');
         uploadButton.prop('disabled', true);
-        uploadButton.html('<i class="fas fa-spinner fa-spin me-1"></i> Uploading...');
+        uploadButton.html('<i class="fas fa-spinner fa-spin me-1"></i> {{ _("Uploading...") }}');
     });
     
     // Initialize button state

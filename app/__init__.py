@@ -6,6 +6,7 @@ from flask_wtf.csrf import CSRFProtect
 from config import Config
 from app.auth.supabase_client import supabase_auth
 from app.auth.models import SupabaseUser
+from app.i18n import init_babel
 
 # Inicializar Flask-Login
 login_manager = LoginManager()
@@ -36,11 +37,25 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     csrf.init_app(app)
     
+    # Inicializar Babel para internacionalización
+    babel = init_babel(app)
+    
     # Hacer que csrf_token esté disponible en todos los templates
     @app.context_processor
     def inject_csrf_token():
         from flask_wtf.csrf import generate_csrf
         return dict(csrf_token=generate_csrf)
+    
+    # Hacer que las funciones de internacionalización estén disponibles en templates
+    @app.context_processor
+    def inject_i18n():
+        from app.i18n import get_current_language, get_available_languages, _, _n
+        return dict(
+            current_language=get_current_language(),
+            available_languages=get_available_languages(),
+            _=_,
+            _n=_n
+        )
     
     # Inicializar Supabase para autenticación
     supabase_auth.init_app(app)

@@ -1,0 +1,424 @@
+# Spanish translations for Solution Manager
+# Copyright (C) 2025 Protuner
+# This file is distributed under the same license as the Solution Manager package.
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Solution Manager 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-05 12:00+0000\n"
+"PO-Revision-Date: 2025-09-05 12:00+0000\n"
+"Last-Translator: \n"
+"Language: es\n"
+"Language-Team: Spanish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+# Navigation
+msgid "Home"
+msgstr "Inicio"
+
+msgid "Solutions"
+msgstr "Soluciones"
+
+msgid "Add Solution"
+msgstr "Agregar Solución"
+
+msgid "Modify File"
+msgstr "Modificar Archivo"
+
+msgid "My Profile"
+msgstr "Mi Perfil"
+
+msgid "Logout"
+msgstr "Cerrar Sesión"
+
+msgid "Sign In"
+msgstr "Iniciar Sesión"
+
+# File Upload
+msgid "Upload Files"
+msgstr "Subir Archivos"
+
+msgid "Upload Binary Files"
+msgstr "Subir Archivos Binarios"
+
+msgid "ORI1 File"
+msgstr "Archivo ORI1"
+
+msgid "MOD1 File"
+msgstr "Archivo MOD1"
+
+msgid "Upload ORI2 File"
+msgstr "Subir Archivo ORI2"
+
+msgid "Select ORI2 File"
+msgstr "Seleccionar Archivo ORI2"
+
+msgid "Accepted formats"
+msgstr "Formatos aceptados"
+msgstr "Archivo MOD1"
+
+msgid "Select ORI1 File"
+msgstr "Seleccionar Archivo ORI1"
+
+msgid "Select MOD1 File"
+msgstr "Seleccionar Archivo MOD1"
+
+msgid "Accepted formats"
+msgstr "Formatos aceptados"
+
+msgid "Uploaded"
+msgstr "Subido"
+
+msgid "Current file"
+msgstr "Archivo actual"
+
+msgid "Replace Files"
+msgstr "Reemplazar Archivos"
+
+msgid "Compare Files"
+msgstr "Comparar Archivos"
+
+msgid "Bit Size"
+msgstr "Tamaño de Bit"
+
+# Form Fields
+msgid "Vehicle Type"
+msgstr "Tipo de Vehículo"
+
+msgid "Make"
+msgstr "Marca"
+
+msgid "Model"
+msgstr "Modelo"
+
+msgid "Engine"
+msgstr "Motor"
+
+msgid "ECU Type"
+msgstr "Tipo de ECU"
+
+msgid "Transmission Type"
+msgstr "Tipo de Transmisión"
+
+msgid "Hardware Number"
+msgstr "Número de Hardware"
+
+msgid "Software Number"
+msgstr "Número de Software"
+
+msgid "Software Update Number"
+msgstr "Número de Actualización de Software"
+
+msgid "Year"
+msgstr "Año"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "Select"
+msgstr "Seleccionar"
+
+msgid "Automatic"
+msgstr "Automático"
+
+msgid "Manual"
+msgstr "Manual"
+
+# Solution Types
+msgid "Solution Types"
+msgstr "Tipos de Solución"
+
+msgid "Stage 1"
+msgstr "Etapa 1"
+
+msgid "Stage 2"
+msgstr "Etapa 2"
+
+msgid "Pop and Bangs"
+msgstr "Pop and Bangs"
+
+msgid "Vmax"
+msgstr "Vmax"
+
+msgid "DTC Off"
+msgstr "DTC Off"
+
+msgid "Full Decat"
+msgstr "Decat Completo"
+
+msgid "Immo Off"
+msgstr "Immo Off"
+
+msgid "Evap Off"
+msgstr "Evap Off"
+
+msgid "TVA"
+msgstr "TVA"
+
+msgid "EGR Off"
+msgstr "EGR Off"
+
+msgid "DPF Off"
+msgstr "DPF Off"
+
+msgid "EGR + DPF Off"
+msgstr "EGR + DPF Off"
+
+msgid "AdBlue Off"
+msgstr "AdBlue Off"
+
+msgid "EGR + DPF + AdBlue Off"
+msgstr "EGR + DPF + AdBlue Off"
+
+# Buttons and Actions
+msgid "Save Solution"
+msgstr "Guardar Solución"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Search"
+msgstr "Buscar"
+
+msgid "Search Solutions"
+msgstr "Buscar Soluciones"
+msgstr "Buscar Soluciones"
+
+msgid "Clear"
+msgstr "Limpiar"
+
+msgid "Apply"
+msgstr "Aplicar"
+
+msgid "Download"
+msgstr "Descargar"
+
+msgid "Delete"
+msgstr "Eliminar"
+
+# Messages
+msgid "Please upload both ORI1 and MOD1 files to compare them."
+msgstr "Por favor sube ambos archivos ORI1 y MOD1 para compararlos."
+
+msgid "Please upload and compare files first"
+msgstr "Por favor sube y compara los archivos primero"
+
+msgid "Language updated successfully"
+msgstr "Idioma actualizado exitosamente"
+
+msgid "Invalid language selection"
+msgstr "Selección de idioma inválida"
+
+msgid "Both files uploaded successfully!"
+msgstr "¡Ambos archivos subidos exitosamente!"
+
+msgid "Files compared successfully."
+msgstr "Archivos comparados exitosamente."
+
+msgid "differences found"
+msgstr "diferencias encontradas"
+
+# Table Headers
+msgid "ID"
+msgstr "ID"
+
+msgid "Created"
+msgstr "Creado"
+
+msgid "Vehicle"
+msgstr "Vehículo"
+
+msgid "Actions"
+msgstr "Acciones"
+
+# Status
+msgid "Active"
+msgstr "Activo"
+
+msgid "Inactive"
+msgstr "Inactivo"
+
+msgid "Pending"
+msgstr "Pendiente"
+
+msgid "Completed"
+msgstr "Completado"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Success"
+msgstr "Éxito"
+
+msgid "Warning"
+msgstr "Advertencia"
+
+msgid "Info"
+msgstr "Información"
+
+# Additional translations for new pages
+msgid "Select"
+msgstr "Seleccionar"
+
+msgid "Software Update Number"
+msgstr "Número de Actualización de Software"
+
+msgid "Transmission Type"
+msgstr "Tipo de Transmisión"
+
+msgid "Automatic"
+msgstr "Automático"
+
+msgid "Manual"
+msgstr "Manual"
+
+msgid "Clear"
+msgstr "Limpiar"
+
+msgid "Results"
+msgstr "Resultados"
+
+msgid "Use the search form above to find solutions."
+msgstr "Use el formulario de búsqueda de arriba para encontrar soluciones."
+
+msgid "Solution"
+msgstr "Solución"
+
+msgid "Apply"
+msgstr "Aplicar"
+
+msgid "Vehicle"
+msgstr "Vehículo"
+
+msgid "Hardware"
+msgstr "Hardware"
+
+msgid "Software"
+msgstr "Software"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "No solutions found matching your criteria."
+msgstr "No se encontraron soluciones que coincidan con sus criterios."
+
+msgid "Vmax"
+msgstr "Vmax"
+
+msgid "DTC Off"
+msgstr "DTC Desactivado"
+
+msgid "Full Decat"
+msgstr "Decat Completo"
+
+msgid "Immo Off"
+msgstr "Immo Desactivado"
+
+msgid "Evap Off"
+msgstr "Evap Desactivado"
+
+msgid "TVA"
+msgstr "TVA"
+
+msgid "EGR + DPF Off"
+msgstr "EGR + DPF Desactivado"
+
+msgid "EGR + DPF + AdBlue Off"
+msgstr "EGR + DPF + AdBlue Desactivado"
+
+# Additional translations for Add Solution form
+msgid "ORI1 File"
+msgstr "Archivo ORI1"
+
+msgid "MOD1 File"
+msgstr "Archivo MOD1"
+
+msgid "Uploaded"
+msgstr "Subido"
+
+msgid "Select ORI1 File"
+msgstr "Seleccionar Archivo ORI1"
+
+msgid "Select MOD1 File"
+msgstr "Seleccionar Archivo MOD1"
+
+msgid "Accepted formats"
+msgstr "Formatos aceptados"
+
+msgid "Current file"
+msgstr "Archivo actual"
+
+msgid "Replace Files"
+msgstr "Reemplazar Archivos"
+
+msgid "Select new files to replace"
+msgstr "Seleccione nuevos archivos para reemplazar"
+
+msgid "Uploading..."
+msgstr "Subiendo..."
+
+msgid "Files compared successfully!"
+msgstr "¡Archivos comparados exitosamente!"
+
+msgid "differences found"
+msgstr "diferencias encontradas"
+
+msgid "Please upload and compare files first"
+msgstr "Por favor, suba y compare los archivos primero"
+
+# Modify File page specific translations
+msgid "Use the search form above to find solutions."
+msgstr "Use el formulario de búsqueda de arriba para encontrar soluciones."
+
+msgid "Apply Solution"
+msgstr "Aplicar Solución"
+
+msgid "Solution"
+msgstr "Solución"
+
+msgid "Hardware"
+msgstr "Hardware"
+
+msgid "Software"
+msgstr "Software"
+
+msgid "Pop and Bangs"
+msgstr "Pop and Bangs"
+
+msgid "Vmax"
+msgstr "Vmax"
+
+msgid "DTC Off"
+msgstr "DTC Desactivado"
+
+msgid "Full Decat"
+msgstr "Decat Completo"
+
+msgid "Immo Off"
+msgstr "Inmovilizador Desactivado"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "No solutions found matching your criteria."
+msgstr "No se encontraron soluciones que coincidan con sus criterios."
+
+# Home page specific translations
+msgid "Home Dashboard"
+msgstr "Panel de Inicio"
+
+msgid "Recent Solutions"
+msgstr "Soluciones Recientes"
+
+msgid "Show Results"
+msgstr "Mostrar Resultados"
+
+msgid "solutions shown"
+msgstr "soluciones mostradas"
+
+msgid "Last Modified"
+msgstr "Última Modificación"

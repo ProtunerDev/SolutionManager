@@ -26,52 +26,74 @@
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('main.home') }}">
-                            <i class="fas fa-home"></i> Home
+                            <i class="fas fa-home"></i> {{ _('Home') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('main.solutions') }}">
-                            <i class="fas fa-database"></i> Solutions
+                            <i class="fas fa-database"></i> {{ _('Solutions') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('main.add_solution') }}">
-                            <i class="fas fa-plus-circle"></i> Add Solution
+                            <i class="fas fa-plus-circle"></i> {{ _('Add Solution') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('main.modify_file') }}">
-                            <i class="fas fa-file-code"></i> Modify File
+                            <i class="fas fa-file-code"></i> {{ _('Modify File') }}
                         </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('main.index') }}">
-                            <i class="fas fa-home"></i> Home
+                            <i class="fas fa-home"></i> {{ _('Home') }}
                         </a>
                     </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
+                    <!-- Language Selector -->
+                    <li class="nav-item dropdown me-3">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-globe"></i> 
+                            {% if current_language == 'es' %}
+                                Español
+                            {% else %}
+                                English
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% if current_language == 'en' %}active{% endif %}" 
+                                   href="{{ url_for('main.set_language', language='en') }}">
+                                <i class="fas fa-flag-usa"></i> English
+                            </a></li>
+                            <li><a class="dropdown-item {% if current_language == 'es' %}active{% endif %}" 
+                                   href="{{ url_for('main.set_language', language='es') }}">
+                                <i class="fas fa-flag"></i> Español
+                            </a></li>
+                        </ul>
+                    </li>
+                    <!-- User Dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user"></i> {{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
-                                <i class="fas fa-user"></i> My Profile
+                                <i class="fas fa-user"></i> {{ _('My Profile') }}
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                <i class="fas fa-sign-out-alt"></i> Logout
+                                <i class="fas fa-sign-out-alt"></i> {{ _('Logout') }}
                             </a></li>
                         </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.login') }}">
-                            <i class="fas fa-sign-in-alt"></i> Sign In
+                            <i class="fas fa-sign-in-alt"></i> {{ _('Sign In') }}
                         </a>
                     </li>
                     {% endif %}
