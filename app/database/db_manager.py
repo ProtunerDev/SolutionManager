@@ -297,7 +297,7 @@ class DatabaseManager:
                     pass
             return None
 
-    def add_solution(self, vehicle_info: Dict[str, Any], solution_types: Optional[Dict[str, Any]] = None) -> Optional[int]:
+    def add_solution(self, vehicle_info: Dict[str, Any], solution_types: Optional[Dict[str, Any]] = None, created_by: Optional[str] = None) -> Optional[int]:
         """
         Add a new solution with vehicle information and optional solution types.
 
@@ -346,10 +346,10 @@ class DatabaseManager:
             vehicle_info_id = self.cursor.fetchone()[0]
 
             self.cursor.execute('''
-                INSERT INTO solutions (vehicle_info_id, status)
-                VALUES (%s, 'active')
+                INSERT INTO solutions (vehicle_info_id, status, created_by)
+                VALUES (%s, 'active', %s)
                 RETURNING id
-            ''', (vehicle_info_id,))
+            ''', (vehicle_info_id, created_by))
             solution_id = self.cursor.fetchone()[0]
 
             if solution_types:
@@ -475,7 +475,7 @@ class DatabaseManager:
 
         try:
             query = '''
-                SELECT s.id, v.vehicle_type, v.make, v.model, v.engine, v.year,
+                SELECT s.id, s.created_by, v.vehicle_type, v.make, v.model, v.engine, v.year,
                        v.hardware_number, v.software_number, v.software_update_number,
                        v.ecu_type, v.transmission_type, v.created_at, v.updated_at,
                        st.stage_1, st.stage_2, st.pop_and_bangs, st.vmax,

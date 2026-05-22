@@ -35,6 +35,7 @@ class SupabaseUser(UserMixin):
         self.full_name = self.user_metadata.get('full_name', '')
         self.created_at = user_data.get('created_at')
         self.last_sign_in_at = user_data.get('last_sign_in_at')
+        self.is_admin = self.app_metadata.get('role') == 'admin'
     
     def get_id(self):
         """Requerido por Flask-Login"""

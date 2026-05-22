@@ -60,6 +60,7 @@ CREATE TABLE solutions (
     vehicle_info_id INTEGER NOT NULL,
     description TEXT,
     status TEXT NOT NULL DEFAULT 'active',
+    created_by TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (vehicle_info_id) REFERENCES vehicle_info(id) ON DELETE CASCADE

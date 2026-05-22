@@ -585,7 +585,7 @@ def add_solution():
             }
             
             with DatabaseManager() as db:
-                solution_id = db.add_solution(vehicle_info, solution_types)
+                solution_id = db.add_solution(vehicle_info, solution_types, created_by=current_user.id)
                 
                 if solution_id:
                     bit_size = session.get('bit_size', 8)
@@ -676,12 +676,10 @@ def add_solution():
 @bp.route('/solutions/edit/<int:solution_id>', methods=['GET', 'POST'])
 @login_required
 def edit_solution(solution_id):
-    """
-    Edit solution route.
-    
-    GET: Display edit solution form
-    POST: Process edit solution request
-    """
+    if not current_user.is_admin:
+        flash('Only administrators can edit solutions.', 'danger')
+        return redirect(url_for('main.solutions'))
+
     with DatabaseManager() as db:
         solution = db.search_solutions({'id': solution_id})
         if not solution:
@@ -741,7 +739,9 @@ def edit_solution(solution_id):
 @bp.route('/solutions/delete/<int:solution_id>', methods=['POST'])
 @login_required
 def delete_solution(solution_id):
-    """Delete solution route."""
+    if not current_user.is_admin:
+        flash('Only administrators can delete solutions.', 'danger')
+        return redirect(url_for('main.solutions'))
     try:
         # Eliminar archivos de S3
         storage = get_file_storage()
@@ -762,7 +762,9 @@ def delete_solution(solution_id):
 @bp.route('/solutions/delete_from_home/<int:solution_id>', methods=['POST'])
 @login_required
 def delete_solution_from_home(solution_id):
-    """Delete solution from home/recent solutions."""
+    if not current_user.is_admin:
+        flash('Only administrators can delete solutions.', 'danger')
+        return redirect(url_for('main.home'))
     try:
         # Eliminar archivos de S3
         storage = get_file_storage()
@@ -783,9 +785,10 @@ def delete_solution_from_home(solution_id):
 @bp.route('/delete_solution_from_home', methods=['POST'])
 @login_required
 def delete_solution_from_home_ajax():
-    """Delete solution from home/recent solutions via AJAX."""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Only administrators can delete solutions.'})
+
     logger.info(f"Delete solution request from user: {current_user.email}")
-    
     try:
         data = request.get_json()
         solution_id = data.get('solution_id')
