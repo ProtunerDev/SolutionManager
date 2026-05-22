@@ -21,11 +21,11 @@ class PostgreSQLFileStorage:
         return psycopg2.connect(**self.db_config)
     
     def store_file(self, solution_id, file_type, file_name, file_data):
-        """Método placeholder - ya no usado con S3"""
-        logger.warning("PostgreSQL file storage is deprecated. Use S3 instead.")
-        return False
-    
+        raise RuntimeError(
+            "PostgreSQLFileStorage is disabled. Set STORAGE_TYPE=s3 in your environment."
+        )
+
     def get_file(self, solution_id, file_type):
-        """Método placeholder - ya no usado con S3"""
-        logger.warning("PostgreSQL file storage is deprecated. Use S3 instead.")
-        return None, None
+        raise RuntimeError(
+            "PostgreSQLFileStorage is disabled. Set STORAGE_TYPE=s3 in your environment."
+        )

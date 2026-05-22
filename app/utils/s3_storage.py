@@ -125,13 +125,10 @@ class S3FileStorage:
             # Verificar si la solution existe
             cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
             if not cur.fetchone():
-                logger.warning(f"Solution {solution_id} not found, creating test solution")
-                # Crear solution de prueba si no existe
-                cur.execute("""
-                    INSERT INTO solutions (id, vehicle_info_id, description, status) 
-                    VALUES (%s, 1, 'Auto-created solution for file upload', 'active')
-                    ON CONFLICT (id) DO NOTHING
-                """, (solution_id,))
+                logger.error(f"Solution {solution_id} not found — file metadata not saved")
+                cur.close()
+                conn.close()
+                return
             
             # Eliminar metadatos anteriores del mismo tipo si existen
             cur.execute(
@@ -270,16 +267,9 @@ class S3FileStorage:
             
             logger.info(f"Differences storage completed for solution {solution_id}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error storing differences: {e}")
-            return False
-            
-            logger.info(f"Differences stored in S3: {s3_key}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error storing differences in S3: {e}")
             return False
     
     def _save_differences_metadata(self, solution_id, total_differences, s3_key):
@@ -300,12 +290,10 @@ class S3FileStorage:
             # Verificar si la solution existe
             cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
             if not cur.fetchone():
-                # Crear solution de prueba si no existe
-                cur.execute("""
-                    INSERT INTO solutions (id, vehicle_info_id, description, status) 
-                    VALUES (%s, 1, 'Auto-created solution for differences', 'active')
-                    ON CONFLICT (id) DO NOTHING
-                """, (solution_id,))
+                logger.error(f"Solution {solution_id} not found — differences metadata not saved")
+                cur.close()
+                conn.close()
+                return
             
             # Eliminar metadatos anteriores si existen
             cur.execute(
