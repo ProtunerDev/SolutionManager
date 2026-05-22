@@ -53,7 +53,7 @@ class DatabaseManager:
             "port": current_app.config.get('DB_PORT', 5432),
             "database": current_app.config.get('DB_NAME', 'SolutionManager'),
             "user": current_app.config.get('DB_USER', 'postgres'),
-            "password": current_app.config.get('DB_PASSWORD', 'Jmadriz63')
+            "password": current_app.config.get('DB_PASSWORD')
         }
         logger.debug(f"DatabaseManager initialized with connection to PostgreSQL database: {self.db_params['database']}")
         self.conn = None
