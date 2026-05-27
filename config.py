@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Determinar qué archivo .env cargar basado en FLASK_ENV
@@ -28,12 +29,22 @@ class Config:
     SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY') 
     SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
     
-    # Database PostgreSQL local
-    DB_HOST = os.environ.get('DB_HOST') or 'localhost'
-    DB_NAME = os.environ.get('DB_NAME') or 'SolutionManager'
-    DB_USER = os.environ.get('DB_USER') or 'postgres'
-    DB_PASSWORD = os.environ.get('DB_PASSWORD') or ''
-    DB_PORT = int(os.environ.get('DB_PORT') or 5432)
+    # Database PostgreSQL
+    # Supports individual DB_* vars (local/.env) or a single DATABASE_URL (Railway auto-inject)
+    _db_url = os.environ.get('DATABASE_URL', '')
+    if _db_url:
+        _parsed = urlparse(_db_url)
+        DB_HOST = _parsed.hostname or 'localhost'
+        DB_PORT = _parsed.port or 5432
+        DB_USER = _parsed.username or 'postgres'
+        DB_PASSWORD = _parsed.password or ''
+        DB_NAME = (_parsed.path or '/SolutionManager').lstrip('/')
+    else:
+        DB_HOST = os.environ.get('DB_HOST') or 'localhost'
+        DB_NAME = os.environ.get('DB_NAME') or 'SolutionManager'
+        DB_USER = os.environ.get('DB_USER') or 'postgres'
+        DB_PASSWORD = os.environ.get('DB_PASSWORD') or ''
+        DB_PORT = int(os.environ.get('DB_PORT') or 5432)
     
     # Storage Configuration
     STORAGE_TYPE = os.environ.get('STORAGE_TYPE') or 'local'
