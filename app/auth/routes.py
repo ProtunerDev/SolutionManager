@@ -50,7 +50,7 @@ def login():
     return render_template('auth/login.html', title='Sign In', form=form)
 
 @bp.route('/forgot_password', methods=['GET', 'POST'])
-@limiter.limit("5 per hour")
+@limiter.limit("3 per hour")
 def forgot_password():
     """Envía enlace de reset de password"""
     if current_user.is_authenticated:
