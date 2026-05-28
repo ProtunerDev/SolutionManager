@@ -16,11 +16,13 @@ from app.auth import bp
 from app.auth.forms import LoginForm, ForgotPasswordForm, ResetPasswordForm
 from app.auth.models import SupabaseUser
 from app.auth.supabase_client import supabase_auth
+from app.extensions import limiter
 
 # Configurar logger
 logger = logging.getLogger(__name__)
 
 @bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     """Ruta de login con email y password"""
     if current_user.is_authenticated:
@@ -48,6 +50,7 @@ def login():
     return render_template('auth/login.html', title='Sign In', form=form)
 
 @bp.route('/forgot_password', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")
 def forgot_password():
     """Envía enlace de reset de password"""
     if current_user.is_authenticated:

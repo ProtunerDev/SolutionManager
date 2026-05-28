@@ -7,6 +7,7 @@ from config import Config
 from app.auth.supabase_client import supabase_auth
 from app.auth.models import SupabaseUser
 from app.i18n import init_babel
+from app.extensions import limiter
 
 # Inicializar Flask-Login
 login_manager = LoginManager()
@@ -36,6 +37,7 @@ def create_app(config_class=Config):
     # Inicializar extensiones
     login_manager.init_app(app)
     csrf.init_app(app)
+    limiter.init_app(app)
     
     # Inicializar Babel para internacionalización
     babel = init_babel(app)
