@@ -65,8 +65,21 @@ def create_app(config_class=Config):
     # Registrar blueprints
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
-    
+
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    
+
+    # Handler para rate limit excedido — registra IP y envía alerta
+    @app.errorhandler(429)
+    def rate_limit_exceeded(e):
+        from flask import request, flash, redirect, url_for
+        from app.utils.security_notifier import notify_rate_limit_breach
+        notify_rate_limit_breach(
+            ip=request.remote_addr,
+            endpoint=request.path,
+            method=request.method
+        )
+        flash('Too many attempts. Please wait before trying again.', 'danger')
+        return redirect(url_for('auth.login')), 429
+
     return app
