@@ -33,11 +33,11 @@ class S3FileStorage:
             raise
     
     def _test_connection(self):
-        """Probar conectividad con S3"""
+        """Probar conectividad con S3 y configurar lifecycle rule para temp files"""
         try:
-            # Verificar que el bucket existe y es accesible
             self.s3_client.head_bucket(Bucket=self.bucket_name)
             logger.info(f"✅ S3 connection successful - Bucket: {self.bucket_name}")
+            self._ensure_temp_lifecycle_rule()
             return True
         except ClientError as e:
             error_code = e.response['Error']['Code']
@@ -55,6 +55,34 @@ class S3FileStorage:
             logger.error(f"❌ Unexpected S3 error: {e}")
             return False
     
+    def _ensure_temp_lifecycle_rule(self):
+        """Create S3 lifecycle rule to auto-expire temp files after 24h (idempotent)."""
+        rule_id = 'expire-temp-solutions'
+        try:
+            try:
+                existing = self.s3_client.get_bucket_lifecycle_configuration(Bucket=self.bucket_name)
+                if any(r['ID'] == rule_id for r in existing.get('Rules', [])):
+                    logger.info("S3 lifecycle rule for temp files already exists")
+                    return
+            except ClientError as e:
+                if e.response['Error']['Code'] != 'NoSuchLifecycleConfiguration':
+                    raise
+
+            self.s3_client.put_bucket_lifecycle_configuration(
+                Bucket=self.bucket_name,
+                LifecycleConfiguration={
+                    'Rules': [{
+                        'ID': rule_id,
+                        'Status': 'Enabled',
+                        'Filter': {'Prefix': 'solutions/temp'},
+                        'Expiration': {'Days': 1}
+                    }]
+                }
+            )
+            logger.info("✅ S3 lifecycle rule created: temp files expire after 24h")
+        except Exception as e:
+            logger.warning(f"Could not set S3 lifecycle rule: {e}")
+
     def _get_s3_key(self, solution_id, file_type, file_name):
         """Generar clave S3 para el archivo"""
         return f"solutions/{solution_id}/{file_type}/{file_name}"
