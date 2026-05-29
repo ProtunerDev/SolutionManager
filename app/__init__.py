@@ -62,6 +62,15 @@ def create_app(config_class=Config):
     # Inicializar Supabase para autenticación
     supabase_auth.init_app(app)
     
+    # Verificar conectividad S3 una sola vez al arrancar (solo en producción)
+    if app.config.get('STORAGE_TYPE') == 's3':
+        with app.app_context():
+            try:
+                from app.utils.s3_storage import S3FileStorage
+                S3FileStorage()._test_connection()
+            except Exception as e:
+                app.logger.warning(f"S3 connectivity check at startup failed: {e}")
+
     # Registrar blueprints
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)

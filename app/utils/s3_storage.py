@@ -2,6 +2,7 @@ import boto3
 import json
 from flask import current_app
 import logging
+from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError, NoCredentialsError
 from datetime import datetime
 
@@ -11,16 +12,21 @@ class S3FileStorage:
     def __init__(self):
         self.bucket_name = current_app.config['AWS_S3_BUCKET']
         self.region = current_app.config['AWS_S3_REGION']
-        
+
+        boto_config = BotocoreConfig(
+            connect_timeout=5,
+            read_timeout=30,
+            retries={'max_attempts': 2}
+        )
+
         try:
             self.s3_client = boto3.client(
                 's3',
                 aws_access_key_id=current_app.config['AWS_ACCESS_KEY_ID'],
                 aws_secret_access_key=current_app.config['AWS_SECRET_ACCESS_KEY'],
-                region_name=self.region
+                region_name=self.region,
+                config=boto_config
             )
-            # Verificar conectividad al inicializar
-            self._test_connection()
         except Exception as e:
             logger.error(f"Error initializing S3 client: {e}")
             raise
