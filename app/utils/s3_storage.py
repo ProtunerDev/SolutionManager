@@ -84,30 +84,35 @@ class S3FileStorage:
             logger.warning(f"Could not set S3 lifecycle rule: {e}")
 
     def _get_s3_key(self, solution_id, file_type, file_name):
-        """Generar clave S3 para el archivo"""
         return f"solutions/{solution_id}/{file_type}/{file_name}"
+
+    def _compensate_s3_delete(self, s3_key):
+        """Delete an S3 object to compensate for a failed DB write. Logs SPLIT-BRAIN if delete also fails."""
+        try:
+            self.s3_client.delete_object(Bucket=self.bucket_name, Key=s3_key)
+            logger.info(f"Compensation successful: deleted S3 object {s3_key}")
+        except Exception as s3_error:
+            logger.error(
+                f"SPLIT-BRAIN DETECTED: S3 object exists but DB has no metadata — "
+                f"manual cleanup required. Key: {s3_key} | Error: {s3_error}"
+            )
     
     def store_file(self, solution_id, file_type, file_name, file_data):
         """Subir archivo a S3 y guardar metadatos en PostgreSQL"""
         try:
-            # Convertir solution_id a entero si es posible, mantener como string si es temporal
             temp_solution_id = str(solution_id)
             is_permanent_solution = False
-            
-            # Verificar si es un ID de solución permanente (entero positivo)
+
             try:
                 int_solution_id = int(solution_id)
-                if int_solution_id > 0 and int_solution_id < 1000000000:  # ID razonable
+                if 0 < int_solution_id < 1000000000:
                     is_permanent_solution = True
                     solution_id = int_solution_id
             except (ValueError, TypeError):
-                # Es un ID temporal, mantener como string
                 pass
-            
-            # Generar clave S3
+
             s3_key = self._get_s3_key(temp_solution_id, file_type, file_name)
-            
-            # Subir archivo a S3
+
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=s3_key,
@@ -120,14 +125,19 @@ class S3FileStorage:
                     'file_size': str(len(file_data))
                 }
             )
-            
-            # Solo guardar metadatos en PostgreSQL si es un ID entero válido de solución permanente
+
             if is_permanent_solution:
-                self._save_file_metadata(solution_id, file_type, file_name, len(file_data), s3_key)
-            
+                try:
+                    self._save_file_metadata(solution_id, file_type, file_name, len(file_data), s3_key)
+                except Exception as db_error:
+                    # Compensate: S3 write succeeded but DB failed — delete S3 object
+                    logger.error(f"DB write failed after S3 upload — compensating: {s3_key}")
+                    self._compensate_s3_delete(s3_key)
+                    return False
+
             logger.info(f"File {file_name} ({file_type}) uploaded to S3: {s3_key}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error uploading to S3: {e}")
             return False
@@ -235,37 +245,35 @@ class S3FileStorage:
         """Guardar diferencias como JSON en S3 y metadatos en PostgreSQL"""
         try:
             solution_id = int(solution_id)
-            
             s3_key = f"solutions/{solution_id}/differences/differences.json"
-            logger.info(f"Storing {len(differences_list)} differences for solution {solution_id} to S3 key: {s3_key}")
-            
+
             differences_data = {
                 'solution_id': solution_id,
                 'total_differences': len(differences_list),
                 'differences': differences_list,
                 'created_at': str(datetime.utcnow())
             }
-            
-            json_data = json.dumps(differences_data, indent=2)
-            
-            # Subir a S3
+
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=s3_key,
-                Body=json_data.encode('utf-8'),
+                Body=json.dumps(differences_data, indent=2).encode('utf-8'),
                 ContentType='application/json',
                 Metadata={
                     'solution_id': str(solution_id),
                     'total_differences': str(len(differences_list))
                 }
             )
-            
-            logger.info(f"Successfully stored differences in S3 for solution {solution_id}")
-            
-            # Guardar metadatos en PostgreSQL
-            self._save_differences_metadata(solution_id, len(differences_list), s3_key)
-            
-            logger.info(f"Differences storage completed for solution {solution_id}")
+
+            try:
+                self._save_differences_metadata(solution_id, len(differences_list), s3_key)
+            except Exception as db_error:
+                # Compensate: S3 write succeeded but DB failed — delete S3 object
+                logger.error(f"DB write failed after S3 upload — compensating: {s3_key}")
+                self._compensate_s3_delete(s3_key)
+                return False
+
+            logger.info(f"Differences stored for solution {solution_id}: {s3_key}")
             return True
 
         except Exception as e:
@@ -382,12 +390,15 @@ class S3FileStorage:
                                 'original_filename': filename
                             }
                         )
-                        
-                        # Obtener tamaño del archivo
+
                         file_size = obj['Size']
-                        
-                        # Guardar metadatos en PostgreSQL para ambos archivos
-                        self._save_file_metadata(real_solution_id, file_type, filename, file_size, new_key)
+
+                        try:
+                            self._save_file_metadata(real_solution_id, file_type, filename, file_size, new_key)
+                        except Exception as db_error:
+                            logger.error(f"DB write failed after S3 copy — compensating: {new_key}")
+                            self._compensate_s3_delete(new_key)
+                            continue
                         
                         transferred_files.append({
                             'file_type': file_type,
