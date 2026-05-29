@@ -16,6 +16,7 @@ handling for data integrity.
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import DictCursor
+from app.database.db_pool import get_connection, return_connection
 from pathlib import Path
 import os
 import logging
@@ -70,12 +71,10 @@ class DatabaseManager:
         try:
             if not self.conn:
                 logger.debug(f"Connecting to PostgreSQL database: {self.db_params['database']}")
-                self.conn = psycopg2.connect(**self.db_params)
-                if not self.conn:
-                    raise Exception("Failed to establish database connection")
+                self.conn = get_connection()
                 self.cursor = self.conn.cursor(cursor_factory=DictCursor)
                 if not self.cursor:
-                    self.conn.close()
+                    return_connection(self.conn)
                     self.conn = None
                     raise Exception("Failed to create database cursor")
                 self.cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'solutions')")
@@ -89,10 +88,7 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Error connecting to database: {e}")
             if self.conn:
-                try:
-                    self.conn.close()
-                except:
-                    pass
+                return_connection(self.conn)
                 self.conn = None
             self.cursor = None
             return None
@@ -117,12 +113,12 @@ class DatabaseManager:
         return False
 
     def close(self):
-        """Close database connection and clean up resources."""
+        """Return connection to pool and clean up resources."""
         if self.conn:
-            logger.debug("Closing database connection")
+            logger.debug("Returning database connection to pool")
             if self._in_transaction:
                 self.conn.commit()
-            self.conn.close()
+            return_connection(self.conn)
             self.conn = None
             self.cursor = None
             self._in_transaction = False

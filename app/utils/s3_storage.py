@@ -5,6 +5,7 @@ import logging
 from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError, NoCredentialsError
 from datetime import datetime
+from app.database.db_pool import pooled_connection
 
 logger = logging.getLogger(__name__)
 
@@ -118,40 +119,22 @@ class S3FileStorage:
     def _save_file_metadata(self, solution_id, file_type, file_name, file_size, s3_key):
         """Guardar metadatos del archivo en PostgreSQL"""
         try:
-            import psycopg2
-            conn = psycopg2.connect(
-                host=current_app.config['DB_HOST'],
-                database=current_app.config['DB_NAME'],
-                user=current_app.config['DB_USER'],
-                password=current_app.config['DB_PASSWORD'],
-                port=current_app.config['DB_PORT']
-            )
-            cur = conn.cursor()
-            
-            # Verificar si la solution existe
-            cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
-            if not cur.fetchone():
-                logger.error(f"Solution {solution_id} not found — file metadata not saved")
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
+                if not cur.fetchone():
+                    logger.error(f"Solution {solution_id} not found — file metadata not saved")
+                    cur.close()
+                    return
+                cur.execute(
+                    "DELETE FROM file_metadata WHERE solution_id = %s AND file_type = %s",
+                    (solution_id, file_type)
+                )
+                cur.execute("""
+                    INSERT INTO file_metadata (solution_id, file_type, file_name, file_size, s3_key)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (solution_id, file_type, file_name, file_size, s3_key))
                 cur.close()
-                conn.close()
-                return
-            
-            # Eliminar metadatos anteriores del mismo tipo si existen
-            cur.execute(
-                "DELETE FROM file_metadata WHERE solution_id = %s AND file_type = %s",
-                (solution_id, file_type)
-            )
-            
-            # Insertar nuevos metadatos
-            cur.execute("""
-                INSERT INTO file_metadata (solution_id, file_type, file_name, file_size, s3_key)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (solution_id, file_type, file_name, file_size, s3_key))
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            
         except Exception as e:
             logger.error(f"Error saving file metadata: {e}")
     
@@ -205,34 +188,17 @@ class S3FileStorage:
         """Obtener información del archivo desde PostgreSQL"""
         try:
             solution_id = int(solution_id)
-            
-            import psycopg2
-            conn = psycopg2.connect(
-                host=current_app.config['DB_HOST'],
-                database=current_app.config['DB_NAME'],
-                user=current_app.config['DB_USER'],
-                password=current_app.config['DB_PASSWORD'],
-                port=current_app.config['DB_PORT']
-            )
-            cur = conn.cursor()
-            
-            cur.execute("""
-                SELECT file_name, file_size, uploaded_at FROM file_metadata 
-                WHERE solution_id = %s AND file_type = %s
-            """, (solution_id, file_type))
-            
-            result = cur.fetchone()
-            cur.close()
-            conn.close()
-            
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("""
+                    SELECT file_name, file_size, uploaded_at FROM file_metadata
+                    WHERE solution_id = %s AND file_type = %s
+                """, (solution_id, file_type))
+                result = cur.fetchone()
+                cur.close()
             if result:
-                return {
-                    'name': result[0],
-                    'size': result[1],
-                    'uploaded_at': result[2]
-                }
+                return {'name': result[0], 'size': result[1], 'uploaded_at': result[2]}
             return None
-            
         except Exception as e:
             logger.error(f"Error getting file info: {e}")
             return None
@@ -282,41 +248,22 @@ class S3FileStorage:
         """Guardar metadatos de diferencias en PostgreSQL"""
         try:
             solution_id = int(solution_id)
-            
-            import psycopg2
-            conn = psycopg2.connect(
-                host=current_app.config['DB_HOST'],
-                database=current_app.config['DB_NAME'],
-                user=current_app.config['DB_USER'],
-                password=current_app.config['DB_PASSWORD'],
-                port=current_app.config['DB_PORT']
-            )
-            cur = conn.cursor()
-            
-            # Verificar si la solution existe
-            cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
-            if not cur.fetchone():
-                logger.error(f"Solution {solution_id} not found — differences metadata not saved")
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
+                if not cur.fetchone():
+                    logger.error(f"Solution {solution_id} not found — differences metadata not saved")
+                    cur.close()
+                    return
+                cur.execute(
+                    "DELETE FROM differences_metadata WHERE solution_id = %s",
+                    (solution_id,)
+                )
+                cur.execute("""
+                    INSERT INTO differences_metadata (solution_id, total_differences, s3_key)
+                    VALUES (%s, %s, %s)
+                """, (solution_id, total_differences, s3_key))
                 cur.close()
-                conn.close()
-                return
-            
-            # Eliminar metadatos anteriores si existen
-            cur.execute(
-                "DELETE FROM differences_metadata WHERE solution_id = %s",
-                (solution_id,)
-            )
-            
-            # Insertar nuevos metadatos
-            cur.execute("""
-                INSERT INTO differences_metadata (solution_id, total_differences, s3_key)
-                VALUES (%s, %s, %s)
-            """, (solution_id, total_differences, s3_key))
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            
         except Exception as e:
             logger.error(f"Error saving differences metadata: {e}")
     
@@ -497,22 +444,11 @@ class S3FileStorage:
                 )
             
             # Eliminar metadatos de PostgreSQL
-            import psycopg2
-            conn = psycopg2.connect(
-                host=current_app.config['DB_HOST'],
-                database=current_app.config['DB_NAME'],
-                user=current_app.config['DB_USER'],
-                password=current_app.config['DB_PASSWORD'],
-                port=current_app.config['DB_PORT']
-            )
-            cur = conn.cursor()
-            
-            cur.execute("DELETE FROM file_metadata WHERE solution_id = %s", (solution_id,))
-            cur.execute("DELETE FROM differences_metadata WHERE solution_id = %s", (solution_id,))
-            
-            conn.commit()
-            cur.close()
-            conn.close()
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("DELETE FROM file_metadata WHERE solution_id = %s", (solution_id,))
+                cur.execute("DELETE FROM differences_metadata WHERE solution_id = %s", (solution_id,))
+                cur.close()
             
             logger.info(f"Solution {solution_id} files deleted")
             return True

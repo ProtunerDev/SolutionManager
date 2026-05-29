@@ -1,26 +1,16 @@
 import json
 import os
 import shutil
-import psycopg2
 from flask import current_app
 import logging
 from datetime import datetime
+from app.database.db_pool import pooled_connection
 
 logger = logging.getLogger(__name__)
 
 class PostgreSQLFileStorage:
     def __init__(self):
         self.upload_folder = current_app.config['UPLOAD_FOLDER']
-        self.db_config = {
-            'host': current_app.config['DB_HOST'],
-            'database': current_app.config['DB_NAME'],
-            'user': current_app.config['DB_USER'],
-            'password': current_app.config['DB_PASSWORD'],
-            'port': current_app.config['DB_PORT']
-        }
-
-    def _get_connection(self):
-        return psycopg2.connect(**self.db_config)
 
     def _get_file_path(self, solution_id, file_type, file_name):
         return os.path.join(self.upload_folder, 'solutions', str(solution_id), file_type, file_name)
@@ -70,28 +60,22 @@ class PostgreSQLFileStorage:
 
     def _save_file_metadata(self, solution_id, file_type, file_name, file_size, file_key):
         try:
-            conn = self._get_connection()
-            cur = conn.cursor()
-
-            cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
-            if not cur.fetchone():
-                logger.error(f"Solution {solution_id} not found — file metadata not saved")
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
+                if not cur.fetchone():
+                    logger.error(f"Solution {solution_id} not found — file metadata not saved")
+                    cur.close()
+                    return
+                cur.execute(
+                    "DELETE FROM file_metadata WHERE solution_id = %s AND file_type = %s",
+                    (solution_id, file_type)
+                )
+                cur.execute("""
+                    INSERT INTO file_metadata (solution_id, file_type, file_name, file_size, s3_key)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (solution_id, file_type, file_name, file_size, file_key))
                 cur.close()
-                conn.close()
-                return
-
-            cur.execute(
-                "DELETE FROM file_metadata WHERE solution_id = %s AND file_type = %s",
-                (solution_id, file_type)
-            )
-            cur.execute("""
-                INSERT INTO file_metadata (solution_id, file_type, file_name, file_size, s3_key)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (solution_id, file_type, file_name, file_size, file_key))
-
-            conn.commit()
-            cur.close()
-            conn.close()
         except Exception as e:
             logger.error(f"Error saving file metadata: {e}")
 
@@ -120,18 +104,14 @@ class PostgreSQLFileStorage:
     def get_file_info(self, solution_id, file_type):
         try:
             solution_id = int(solution_id)
-            conn = self._get_connection()
-            cur = conn.cursor()
-
-            cur.execute("""
-                SELECT file_name, file_size, uploaded_at FROM file_metadata
-                WHERE solution_id = %s AND file_type = %s
-            """, (solution_id, file_type))
-
-            result = cur.fetchone()
-            cur.close()
-            conn.close()
-
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("""
+                    SELECT file_name, file_size, uploaded_at FROM file_metadata
+                    WHERE solution_id = %s AND file_type = %s
+                """, (solution_id, file_type))
+                result = cur.fetchone()
+                cur.close()
             if result:
                 return {'name': result[0], 'size': result[1], 'uploaded_at': result[2]}
             return None
@@ -168,25 +148,19 @@ class PostgreSQLFileStorage:
     def _save_differences_metadata(self, solution_id, total_differences, file_key):
         try:
             solution_id = int(solution_id)
-            conn = self._get_connection()
-            cur = conn.cursor()
-
-            cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
-            if not cur.fetchone():
-                logger.error(f"Solution {solution_id} not found — differences metadata not saved")
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
+                if not cur.fetchone():
+                    logger.error(f"Solution {solution_id} not found — differences metadata not saved")
+                    cur.close()
+                    return
+                cur.execute("DELETE FROM differences_metadata WHERE solution_id = %s", (solution_id,))
+                cur.execute("""
+                    INSERT INTO differences_metadata (solution_id, total_differences, s3_key)
+                    VALUES (%s, %s, %s)
+                """, (solution_id, total_differences, file_key))
                 cur.close()
-                conn.close()
-                return
-
-            cur.execute("DELETE FROM differences_metadata WHERE solution_id = %s", (solution_id,))
-            cur.execute("""
-                INSERT INTO differences_metadata (solution_id, total_differences, s3_key)
-                VALUES (%s, %s, %s)
-            """, (solution_id, total_differences, file_key))
-
-            conn.commit()
-            cur.close()
-            conn.close()
         except Exception as e:
             logger.error(f"Error saving differences metadata: {e}")
 
@@ -272,13 +246,11 @@ class PostgreSQLFileStorage:
             if os.path.exists(solution_path):
                 shutil.rmtree(solution_path)
 
-            conn = self._get_connection()
-            cur = conn.cursor()
-            cur.execute("DELETE FROM file_metadata WHERE solution_id = %s", (solution_id,))
-            cur.execute("DELETE FROM differences_metadata WHERE solution_id = %s", (solution_id,))
-            conn.commit()
-            cur.close()
-            conn.close()
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("DELETE FROM file_metadata WHERE solution_id = %s", (solution_id,))
+                cur.execute("DELETE FROM differences_metadata WHERE solution_id = %s", (solution_id,))
+                cur.close()
 
             logger.info(f"Solution {solution_id} files deleted")
             return True

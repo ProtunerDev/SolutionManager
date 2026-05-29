@@ -62,6 +62,10 @@ def create_app(config_class=Config):
     # Inicializar Supabase para autenticación
     supabase_auth.init_app(app)
     
+    # Inicializar connection pool de PostgreSQL
+    from app.database.db_pool import init_pool
+    init_pool(app)
+
     # Verificar conectividad S3 una sola vez al arrancar (solo en producción)
     if app.config.get('STORAGE_TYPE') == 's3':
         with app.app_context():
