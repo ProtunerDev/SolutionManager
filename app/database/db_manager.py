@@ -16,6 +16,7 @@ handling for data integrity.
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import DictCursor
+from app.database.db_pool import get_connection, return_connection
 from pathlib import Path
 import os
 import logging
@@ -53,7 +54,7 @@ class DatabaseManager:
             "port": current_app.config.get('DB_PORT', 5432),
             "database": current_app.config.get('DB_NAME', 'SolutionManager'),
             "user": current_app.config.get('DB_USER', 'postgres'),
-            "password": current_app.config.get('DB_PASSWORD', 'Jmadriz63')
+            "password": current_app.config.get('DB_PASSWORD')
         }
         logger.debug(f"DatabaseManager initialized with connection to PostgreSQL database: {self.db_params['database']}")
         self.conn = None
@@ -70,12 +71,10 @@ class DatabaseManager:
         try:
             if not self.conn:
                 logger.debug(f"Connecting to PostgreSQL database: {self.db_params['database']}")
-                self.conn = psycopg2.connect(**self.db_params)
-                if not self.conn:
-                    raise Exception("Failed to establish database connection")
+                self.conn = get_connection()
                 self.cursor = self.conn.cursor(cursor_factory=DictCursor)
                 if not self.cursor:
-                    self.conn.close()
+                    return_connection(self.conn)
                     self.conn = None
                     raise Exception("Failed to create database cursor")
                 self.cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'solutions')")
@@ -89,10 +88,7 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Error connecting to database: {e}")
             if self.conn:
-                try:
-                    self.conn.close()
-                except:
-                    pass
+                return_connection(self.conn)
                 self.conn = None
             self.cursor = None
             return None
@@ -117,12 +113,12 @@ class DatabaseManager:
         return False
 
     def close(self):
-        """Close database connection and clean up resources."""
+        """Return connection to pool and clean up resources."""
         if self.conn:
-            logger.debug("Closing database connection")
+            logger.debug("Returning database connection to pool")
             if self._in_transaction:
                 self.conn.commit()
-            self.conn.close()
+            return_connection(self.conn)
             self.conn = None
             self.cursor = None
             self._in_transaction = False
@@ -297,7 +293,7 @@ class DatabaseManager:
                     pass
             return None
 
-    def add_solution(self, vehicle_info: Dict[str, Any], solution_types: Optional[Dict[str, Any]] = None) -> Optional[int]:
+    def add_solution(self, vehicle_info: Dict[str, Any], solution_types: Optional[Dict[str, Any]] = None, created_by: Optional[str] = None) -> Optional[int]:
         """
         Add a new solution with vehicle information and optional solution types.
 
@@ -346,10 +342,10 @@ class DatabaseManager:
             vehicle_info_id = self.cursor.fetchone()[0]
 
             self.cursor.execute('''
-                INSERT INTO solutions (vehicle_info_id, status)
-                VALUES (%s, 'active')
+                INSERT INTO solutions (vehicle_info_id, status, created_by)
+                VALUES (%s, 'active', %s)
                 RETURNING id
-            ''', (vehicle_info_id,))
+            ''', (vehicle_info_id, created_by))
             solution_id = self.cursor.fetchone()[0]
 
             if solution_types:
@@ -475,7 +471,7 @@ class DatabaseManager:
 
         try:
             query = '''
-                SELECT s.id, v.vehicle_type, v.make, v.model, v.engine, v.year,
+                SELECT s.id, s.created_by, v.vehicle_type, v.make, v.model, v.engine, v.year,
                        v.hardware_number, v.software_number, v.software_update_number,
                        v.ecu_type, v.transmission_type, v.created_at, v.updated_at,
                        st.stage_1, st.stage_2, st.pop_and_bangs, st.vmax,

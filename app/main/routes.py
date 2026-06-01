@@ -499,7 +499,7 @@ def solution_detail(solution_id):
         # Obtener diferencias desde S3
         storage = get_file_storage()
         differences_data, total_differences = storage.get_differences(solution_id)
-        
+
         differences = []
         has_differences = False
         if differences_data:
@@ -512,14 +512,19 @@ def solution_detail(solution_id):
                 differences.append((address, ori1_value, mod1_value, bit_size))
         else:
             logger.warning(f"No differences found for solution {solution_id}")
-    
+
+        ori1_info = storage.get_file_info(solution_id, 'ori1')
+        mod1_info = storage.get_file_info(solution_id, 'mod1')
+
     return render_template(
         'main/solution_detail.html',
         title=f'Solution {solution_id}',
         solution=solution,
         differences=differences,
         has_differences=has_differences,
-        total_differences=total_differences
+        total_differences=total_differences,
+        ori1_info=ori1_info,
+        mod1_info=mod1_info
     )
 
 @bp.route('/add_solution', methods=['GET', 'POST'])
@@ -585,7 +590,7 @@ def add_solution():
             }
             
             with DatabaseManager() as db:
-                solution_id = db.add_solution(vehicle_info, solution_types)
+                solution_id = db.add_solution(vehicle_info, solution_types, created_by=current_user.id)
                 
                 if solution_id:
                     bit_size = session.get('bit_size', 8)
@@ -676,12 +681,10 @@ def add_solution():
 @bp.route('/solutions/edit/<int:solution_id>', methods=['GET', 'POST'])
 @login_required
 def edit_solution(solution_id):
-    """
-    Edit solution route.
-    
-    GET: Display edit solution form
-    POST: Process edit solution request
-    """
+    if not current_user.is_admin:
+        flash('Only administrators can edit solutions.', 'danger')
+        return redirect(url_for('main.solutions'))
+
     with DatabaseManager() as db:
         solution = db.search_solutions({'id': solution_id})
         if not solution:
@@ -741,7 +744,9 @@ def edit_solution(solution_id):
 @bp.route('/solutions/delete/<int:solution_id>', methods=['POST'])
 @login_required
 def delete_solution(solution_id):
-    """Delete solution route."""
+    if not current_user.is_admin:
+        flash('Only administrators can delete solutions.', 'danger')
+        return redirect(url_for('main.solutions'))
     try:
         # Eliminar archivos de S3
         storage = get_file_storage()
@@ -762,7 +767,9 @@ def delete_solution(solution_id):
 @bp.route('/solutions/delete_from_home/<int:solution_id>', methods=['POST'])
 @login_required
 def delete_solution_from_home(solution_id):
-    """Delete solution from home/recent solutions."""
+    if not current_user.is_admin:
+        flash('Only administrators can delete solutions.', 'danger')
+        return redirect(url_for('main.home'))
     try:
         # Eliminar archivos de S3
         storage = get_file_storage()
@@ -783,9 +790,10 @@ def delete_solution_from_home(solution_id):
 @bp.route('/delete_solution_from_home', methods=['POST'])
 @login_required
 def delete_solution_from_home_ajax():
-    """Delete solution from home/recent solutions via AJAX."""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Only administrators can delete solutions.'})
+
     logger.info(f"Delete solution request from user: {current_user.email}")
-    
     try:
         data = request.get_json()
         solution_id = data.get('solution_id')
@@ -1270,22 +1278,6 @@ def choose_mod2_filename():
         return redirect(url_for('main.download_mod2'))
     return render_template('main/choose_mod2_filename.html')
 
-@bp.route('/debug/config')
-@login_required
-def debug_config():
-    """Debug endpoint to check configuration"""
-    config_info = {
-        'DB_HOST': current_app.config.get('DB_HOST', 'NOT_SET'),
-        'DB_NAME': current_app.config.get('DB_NAME', 'NOT_SET'),
-        'DB_USER': current_app.config.get('DB_USER', 'NOT_SET'),
-        'DB_PORT': current_app.config.get('DB_PORT', 'NOT_SET'),
-        'STORAGE_TYPE': current_app.config.get('STORAGE_TYPE', 'NOT_SET'),
-        'SECRET_KEY_SET': 'YES' if current_app.config.get('SECRET_KEY') else 'NO',
-        'SUPABASE_URL_SET': 'YES' if current_app.config.get('SUPABASE_URL') else 'NO',
-        'AWS_KEYS_SET': 'YES' if current_app.config.get('AWS_ACCESS_KEY_ID') else 'NO',
-    }
-    
-    return f"<pre>Config Debug:\n{json.dumps(config_info, indent=2)}</pre>"
 
 @bp.route('/s3_status')
 @login_required
@@ -1316,6 +1308,18 @@ def s3_status():
     except Exception as e:
         flash(f'Error verificando estado S3: {str(e)}', 'error')
         return redirect(url_for('main.index'))
+
+@bp.route('/health')
+def health():
+    """Health check endpoint for Railway/Render load balancer monitoring."""
+    try:
+        with DatabaseManager() as db:
+            db.cursor.execute("SELECT 1")
+        return {"status": "ok", "db": "ok"}, 200
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {"status": "error", "db": "unreachable"}, 503
+
 
 @bp.route('/set_language/<language>')
 @login_required

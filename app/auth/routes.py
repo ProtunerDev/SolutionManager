@@ -16,11 +16,13 @@ from app.auth import bp
 from app.auth.forms import LoginForm, ForgotPasswordForm, ResetPasswordForm
 from app.auth.models import SupabaseUser
 from app.auth.supabase_client import supabase_auth
+from app.extensions import limiter
 
 # Configurar logger
 logger = logging.getLogger(__name__)
 
 @bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     """Ruta de login con email y password"""
     if current_user.is_authenticated:
@@ -48,6 +50,7 @@ def login():
     return render_template('auth/login.html', title='Sign In', form=form)
 
 @bp.route('/forgot_password', methods=['GET', 'POST'])
+@limiter.limit("3 per hour")
 def forgot_password():
     """Envía enlace de reset de password"""
     if current_user.is_authenticated:
@@ -96,13 +99,20 @@ def reset_password():
     return render_template('auth/reset_password.html', title='Reset Password', form=form)
 
 @bp.route('/logout')
-@login_required  
+@login_required
 def logout():
     """Cerrar sesión"""
-    # Cerrar sesión en Supabase
+    # Limpiar archivos temporales en S3 si el usuario abandona el flujo
+    temp_solution_id = session.get('temp_solution_id')
+    if temp_solution_id:
+        try:
+            from app.utils.storage_factory import get_file_storage
+            get_file_storage().delete_temp_files(temp_solution_id)
+            logger.info(f"Cleaned up temp files on logout: {temp_solution_id}")
+        except Exception as e:
+            logger.warning(f"Could not clean temp files on logout: {e}")
+
     supabase_auth.sign_out()
-    
-    # Cerrar sesión en Flask
     logout_user()
     session.clear()
     flash('You have been logged out.', 'info')

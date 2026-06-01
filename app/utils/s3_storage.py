@@ -2,8 +2,10 @@ import boto3
 import json
 from flask import current_app
 import logging
+from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError, NoCredentialsError
 from datetime import datetime
+from app.database.db_pool import pooled_connection
 
 logger = logging.getLogger(__name__)
 
@@ -11,26 +13,31 @@ class S3FileStorage:
     def __init__(self):
         self.bucket_name = current_app.config['AWS_S3_BUCKET']
         self.region = current_app.config['AWS_S3_REGION']
-        
+
+        boto_config = BotocoreConfig(
+            connect_timeout=5,
+            read_timeout=30,
+            retries={'max_attempts': 2}
+        )
+
         try:
             self.s3_client = boto3.client(
                 's3',
                 aws_access_key_id=current_app.config['AWS_ACCESS_KEY_ID'],
                 aws_secret_access_key=current_app.config['AWS_SECRET_ACCESS_KEY'],
-                region_name=self.region
+                region_name=self.region,
+                config=boto_config
             )
-            # Verificar conectividad al inicializar
-            self._test_connection()
         except Exception as e:
             logger.error(f"Error initializing S3 client: {e}")
             raise
     
     def _test_connection(self):
-        """Probar conectividad con S3"""
+        """Probar conectividad con S3 y configurar lifecycle rule para temp files"""
         try:
-            # Verificar que el bucket existe y es accesible
             self.s3_client.head_bucket(Bucket=self.bucket_name)
             logger.info(f"✅ S3 connection successful - Bucket: {self.bucket_name}")
+            self._ensure_temp_lifecycle_rule()
             return True
         except ClientError as e:
             error_code = e.response['Error']['Code']
@@ -48,31 +55,64 @@ class S3FileStorage:
             logger.error(f"❌ Unexpected S3 error: {e}")
             return False
     
+    def _ensure_temp_lifecycle_rule(self):
+        """Create S3 lifecycle rule to auto-expire temp files after 24h (idempotent)."""
+        rule_id = 'expire-temp-solutions'
+        try:
+            try:
+                existing = self.s3_client.get_bucket_lifecycle_configuration(Bucket=self.bucket_name)
+                if any(r['ID'] == rule_id for r in existing.get('Rules', [])):
+                    logger.info("S3 lifecycle rule for temp files already exists")
+                    return
+            except ClientError as e:
+                if e.response['Error']['Code'] != 'NoSuchLifecycleConfiguration':
+                    raise
+
+            self.s3_client.put_bucket_lifecycle_configuration(
+                Bucket=self.bucket_name,
+                LifecycleConfiguration={
+                    'Rules': [{
+                        'ID': rule_id,
+                        'Status': 'Enabled',
+                        'Filter': {'Prefix': 'solutions/temp'},
+                        'Expiration': {'Days': 1}
+                    }]
+                }
+            )
+            logger.info("✅ S3 lifecycle rule created: temp files expire after 24h")
+        except Exception as e:
+            logger.warning(f"Could not set S3 lifecycle rule: {e}")
+
     def _get_s3_key(self, solution_id, file_type, file_name):
-        """Generar clave S3 para el archivo"""
         return f"solutions/{solution_id}/{file_type}/{file_name}"
+
+    def _compensate_s3_delete(self, s3_key):
+        """Delete an S3 object to compensate for a failed DB write. Logs SPLIT-BRAIN if delete also fails."""
+        try:
+            self.s3_client.delete_object(Bucket=self.bucket_name, Key=s3_key)
+            logger.info(f"Compensation successful: deleted S3 object {s3_key}")
+        except Exception as s3_error:
+            logger.error(
+                f"SPLIT-BRAIN DETECTED: S3 object exists but DB has no metadata — "
+                f"manual cleanup required. Key: {s3_key} | Error: {s3_error}"
+            )
     
     def store_file(self, solution_id, file_type, file_name, file_data):
         """Subir archivo a S3 y guardar metadatos en PostgreSQL"""
         try:
-            # Convertir solution_id a entero si es posible, mantener como string si es temporal
             temp_solution_id = str(solution_id)
             is_permanent_solution = False
-            
-            # Verificar si es un ID de solución permanente (entero positivo)
+
             try:
                 int_solution_id = int(solution_id)
-                if int_solution_id > 0 and int_solution_id < 1000000000:  # ID razonable
+                if 0 < int_solution_id < 1000000000:
                     is_permanent_solution = True
                     solution_id = int_solution_id
             except (ValueError, TypeError):
-                # Es un ID temporal, mantener como string
                 pass
-            
-            # Generar clave S3
+
             s3_key = self._get_s3_key(temp_solution_id, file_type, file_name)
-            
-            # Subir archivo a S3
+
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=s3_key,
@@ -85,14 +125,19 @@ class S3FileStorage:
                     'file_size': str(len(file_data))
                 }
             )
-            
-            # Solo guardar metadatos en PostgreSQL si es un ID entero válido de solución permanente
+
             if is_permanent_solution:
-                self._save_file_metadata(solution_id, file_type, file_name, len(file_data), s3_key)
-            
+                try:
+                    self._save_file_metadata(solution_id, file_type, file_name, len(file_data), s3_key)
+                except Exception as db_error:
+                    # Compensate: S3 write succeeded but DB failed — delete S3 object
+                    logger.error(f"DB write failed after S3 upload — compensating: {s3_key}")
+                    self._compensate_s3_delete(s3_key)
+                    return False
+
             logger.info(f"File {file_name} ({file_type}) uploaded to S3: {s3_key}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error uploading to S3: {e}")
             return False
@@ -112,43 +157,22 @@ class S3FileStorage:
     def _save_file_metadata(self, solution_id, file_type, file_name, file_size, s3_key):
         """Guardar metadatos del archivo en PostgreSQL"""
         try:
-            import psycopg2
-            conn = psycopg2.connect(
-                host=current_app.config['DB_HOST'],
-                database=current_app.config['DB_NAME'],
-                user=current_app.config['DB_USER'],
-                password=current_app.config['DB_PASSWORD'],
-                port=current_app.config['DB_PORT']
-            )
-            cur = conn.cursor()
-            
-            # Verificar si la solution existe
-            cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
-            if not cur.fetchone():
-                logger.warning(f"Solution {solution_id} not found, creating test solution")
-                # Crear solution de prueba si no existe
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
+                if not cur.fetchone():
+                    logger.error(f"Solution {solution_id} not found — file metadata not saved")
+                    cur.close()
+                    return
+                cur.execute(
+                    "DELETE FROM file_metadata WHERE solution_id = %s AND file_type = %s",
+                    (solution_id, file_type)
+                )
                 cur.execute("""
-                    INSERT INTO solutions (id, vehicle_info_id, description, status) 
-                    VALUES (%s, 1, 'Auto-created solution for file upload', 'active')
-                    ON CONFLICT (id) DO NOTHING
-                """, (solution_id,))
-            
-            # Eliminar metadatos anteriores del mismo tipo si existen
-            cur.execute(
-                "DELETE FROM file_metadata WHERE solution_id = %s AND file_type = %s",
-                (solution_id, file_type)
-            )
-            
-            # Insertar nuevos metadatos
-            cur.execute("""
-                INSERT INTO file_metadata (solution_id, file_type, file_name, file_size, s3_key)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (solution_id, file_type, file_name, file_size, s3_key))
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            
+                    INSERT INTO file_metadata (solution_id, file_type, file_name, file_size, s3_key)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (solution_id, file_type, file_name, file_size, s3_key))
+                cur.close()
         except Exception as e:
             logger.error(f"Error saving file metadata: {e}")
     
@@ -202,34 +226,17 @@ class S3FileStorage:
         """Obtener información del archivo desde PostgreSQL"""
         try:
             solution_id = int(solution_id)
-            
-            import psycopg2
-            conn = psycopg2.connect(
-                host=current_app.config['DB_HOST'],
-                database=current_app.config['DB_NAME'],
-                user=current_app.config['DB_USER'],
-                password=current_app.config['DB_PASSWORD'],
-                port=current_app.config['DB_PORT']
-            )
-            cur = conn.cursor()
-            
-            cur.execute("""
-                SELECT file_name, file_size, uploaded_at FROM file_metadata 
-                WHERE solution_id = %s AND file_type = %s
-            """, (solution_id, file_type))
-            
-            result = cur.fetchone()
-            cur.close()
-            conn.close()
-            
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("""
+                    SELECT file_name, file_size, uploaded_at FROM file_metadata
+                    WHERE solution_id = %s AND file_type = %s
+                """, (solution_id, file_type))
+                result = cur.fetchone()
+                cur.close()
             if result:
-                return {
-                    'name': result[0],
-                    'size': result[1],
-                    'uploaded_at': result[2]
-                }
+                return {'name': result[0], 'size': result[1], 'uploaded_at': result[2]}
             return None
-            
         except Exception as e:
             logger.error(f"Error getting file info: {e}")
             return None
@@ -238,91 +245,61 @@ class S3FileStorage:
         """Guardar diferencias como JSON en S3 y metadatos en PostgreSQL"""
         try:
             solution_id = int(solution_id)
-            
             s3_key = f"solutions/{solution_id}/differences/differences.json"
-            logger.info(f"Storing {len(differences_list)} differences for solution {solution_id} to S3 key: {s3_key}")
-            
+
             differences_data = {
                 'solution_id': solution_id,
                 'total_differences': len(differences_list),
                 'differences': differences_list,
                 'created_at': str(datetime.utcnow())
             }
-            
-            json_data = json.dumps(differences_data, indent=2)
-            
-            # Subir a S3
+
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=s3_key,
-                Body=json_data.encode('utf-8'),
+                Body=json.dumps(differences_data, indent=2).encode('utf-8'),
                 ContentType='application/json',
                 Metadata={
                     'solution_id': str(solution_id),
                     'total_differences': str(len(differences_list))
                 }
             )
-            
-            logger.info(f"Successfully stored differences in S3 for solution {solution_id}")
-            
-            # Guardar metadatos en PostgreSQL
-            self._save_differences_metadata(solution_id, len(differences_list), s3_key)
-            
-            logger.info(f"Differences storage completed for solution {solution_id}")
+
+            try:
+                self._save_differences_metadata(solution_id, len(differences_list), s3_key)
+            except Exception as db_error:
+                # Compensate: S3 write succeeded but DB failed — delete S3 object
+                logger.error(f"DB write failed after S3 upload — compensating: {s3_key}")
+                self._compensate_s3_delete(s3_key)
+                return False
+
+            logger.info(f"Differences stored for solution {solution_id}: {s3_key}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error storing differences: {e}")
-            return False
-            
-            logger.info(f"Differences stored in S3: {s3_key}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error storing differences in S3: {e}")
             return False
     
     def _save_differences_metadata(self, solution_id, total_differences, s3_key):
         """Guardar metadatos de diferencias en PostgreSQL"""
         try:
             solution_id = int(solution_id)
-            
-            import psycopg2
-            conn = psycopg2.connect(
-                host=current_app.config['DB_HOST'],
-                database=current_app.config['DB_NAME'],
-                user=current_app.config['DB_USER'],
-                password=current_app.config['DB_PASSWORD'],
-                port=current_app.config['DB_PORT']
-            )
-            cur = conn.cursor()
-            
-            # Verificar si la solution existe
-            cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
-            if not cur.fetchone():
-                # Crear solution de prueba si no existe
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM solutions WHERE id = %s", (solution_id,))
+                if not cur.fetchone():
+                    logger.error(f"Solution {solution_id} not found — differences metadata not saved")
+                    cur.close()
+                    return
+                cur.execute(
+                    "DELETE FROM differences_metadata WHERE solution_id = %s",
+                    (solution_id,)
+                )
                 cur.execute("""
-                    INSERT INTO solutions (id, vehicle_info_id, description, status) 
-                    VALUES (%s, 1, 'Auto-created solution for differences', 'active')
-                    ON CONFLICT (id) DO NOTHING
-                """, (solution_id,))
-            
-            # Eliminar metadatos anteriores si existen
-            cur.execute(
-                "DELETE FROM differences_metadata WHERE solution_id = %s",
-                (solution_id,)
-            )
-            
-            # Insertar nuevos metadatos
-            cur.execute("""
-                INSERT INTO differences_metadata (solution_id, total_differences, s3_key)
-                VALUES (%s, %s, %s)
-            """, (solution_id, total_differences, s3_key))
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            
+                    INSERT INTO differences_metadata (solution_id, total_differences, s3_key)
+                    VALUES (%s, %s, %s)
+                """, (solution_id, total_differences, s3_key))
+                cur.close()
         except Exception as e:
             logger.error(f"Error saving differences metadata: {e}")
     
@@ -413,12 +390,15 @@ class S3FileStorage:
                                 'original_filename': filename
                             }
                         )
-                        
-                        # Obtener tamaño del archivo
+
                         file_size = obj['Size']
-                        
-                        # Guardar metadatos en PostgreSQL para ambos archivos
-                        self._save_file_metadata(real_solution_id, file_type, filename, file_size, new_key)
+
+                        try:
+                            self._save_file_metadata(real_solution_id, file_type, filename, file_size, new_key)
+                        except Exception as db_error:
+                            logger.error(f"DB write failed after S3 copy — compensating: {new_key}")
+                            self._compensate_s3_delete(new_key)
+                            continue
                         
                         transferred_files.append({
                             'file_type': file_type,
@@ -503,22 +483,11 @@ class S3FileStorage:
                 )
             
             # Eliminar metadatos de PostgreSQL
-            import psycopg2
-            conn = psycopg2.connect(
-                host=current_app.config['DB_HOST'],
-                database=current_app.config['DB_NAME'],
-                user=current_app.config['DB_USER'],
-                password=current_app.config['DB_PASSWORD'],
-                port=current_app.config['DB_PORT']
-            )
-            cur = conn.cursor()
-            
-            cur.execute("DELETE FROM file_metadata WHERE solution_id = %s", (solution_id,))
-            cur.execute("DELETE FROM differences_metadata WHERE solution_id = %s", (solution_id,))
-            
-            conn.commit()
-            cur.close()
-            conn.close()
+            with pooled_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("DELETE FROM file_metadata WHERE solution_id = %s", (solution_id,))
+                cur.execute("DELETE FROM differences_metadata WHERE solution_id = %s", (solution_id,))
+                cur.close()
             
             logger.info(f"Solution {solution_id} files deleted")
             return True

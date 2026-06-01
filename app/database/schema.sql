@@ -60,6 +60,7 @@ CREATE TABLE solutions (
     vehicle_info_id INTEGER NOT NULL,
     description TEXT,
     status TEXT NOT NULL DEFAULT 'active',
+    created_by TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (vehicle_info_id) REFERENCES vehicle_info(id) ON DELETE CASCADE
@@ -227,3 +228,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO vehicle_info (id, vehicle_type, make, model, engine, year, hardware_number, software_number, ecu_type, transmission_type)
 VALUES (1, 'Test', 'Test', 'Test', 'Test', 2023, 'TEST001', 'TEST001', 'Test', 'Test')
 ON CONFLICT (id) DO NOTHING;
+
+-- Resetear secuencias para que el próximo INSERT no colisione con el seed data
+SELECT setval('vehicle_info_id_seq', (SELECT MAX(id) FROM vehicle_info));
+SELECT setval('solutions_id_seq', COALESCE((SELECT MAX(id) FROM solutions), 0) + 1, false);

@@ -11,7 +11,9 @@
                     <i class="fas fa-sync-alt"></i> Regenerate Differences
                 </a>
             {% endif %}
+            {% if current_user.is_admin %}
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete</button>
+            {% endif %}
         </div>
     </div>
     <div class="card-body">
@@ -28,6 +30,38 @@
             <strong>Ready:</strong> This solution has {{ total_differences }} differences and is ready to be applied.
         </div>
         {% endif %}
+        {% if ori1_info or mod1_info %}
+        <div class="row mt-3 mb-3">
+            <div class="col-md-12">
+                <h5>Source Files</h5>
+                <div class="row">
+                    {% if ori1_info %}
+                    <div class="col-md-6">
+                        <div class="card border-secondary">
+                            <div class="card-body py-2 px-3">
+                                <small class="text-muted">ORI1 (Original)</small>
+                                <div class="fw-semibold">{{ ori1_info.name }}</div>
+                                <small class="text-muted">{{ (ori1_info.size / 1024) | round(1) }} KB</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if mod1_info %}
+                    <div class="col-md-6">
+                        <div class="card border-secondary">
+                            <div class="card-body py-2 px-3">
+                                <small class="text-muted">MOD1 (Modified)</small>
+                                <div class="fw-semibold">{{ mod1_info.name }}</div>
+                                <small class="text-muted">{{ (mod1_info.size / 1024) | round(1) }} KB</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="row">

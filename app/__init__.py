@@ -7,6 +7,7 @@ from config import Config
 from app.auth.supabase_client import supabase_auth
 from app.auth.models import SupabaseUser
 from app.i18n import init_babel
+from app.extensions import limiter
 
 # Inicializar Flask-Login
 login_manager = LoginManager()
@@ -36,6 +37,7 @@ def create_app(config_class=Config):
     # Inicializar extensiones
     login_manager.init_app(app)
     csrf.init_app(app)
+    limiter.init_app(app)
     
     # Inicializar Babel para internacionalización
     babel = init_babel(app)
@@ -60,11 +62,37 @@ def create_app(config_class=Config):
     # Inicializar Supabase para autenticación
     supabase_auth.init_app(app)
     
+    # Inicializar connection pool de PostgreSQL
+    from app.database.db_pool import init_pool
+    init_pool(app)
+
+    # Verificar conectividad S3 una sola vez al arrancar (solo en producción)
+    if app.config.get('STORAGE_TYPE') == 's3':
+        with app.app_context():
+            try:
+                from app.utils.s3_storage import S3FileStorage
+                S3FileStorage()._test_connection()
+            except Exception as e:
+                app.logger.warning(f"S3 connectivity check at startup failed: {e}")
+
     # Registrar blueprints
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
-    
+
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    
+
+    # Handler para rate limit excedido — registra IP y envía alerta
+    @app.errorhandler(429)
+    def rate_limit_exceeded(e):
+        from flask import request, flash, redirect, url_for
+        from app.utils.security_notifier import notify_rate_limit_breach
+        notify_rate_limit_breach(
+            ip=request.remote_addr,
+            endpoint=request.path,
+            method=request.method
+        )
+        flash('Too many attempts. Please wait before trying again.', 'danger')
+        return redirect(url_for('auth.login')), 429
+
     return app
