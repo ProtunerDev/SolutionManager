@@ -499,7 +499,7 @@ def solution_detail(solution_id):
         # Obtener diferencias desde S3
         storage = get_file_storage()
         differences_data, total_differences = storage.get_differences(solution_id)
-        
+
         differences = []
         has_differences = False
         if differences_data:
@@ -512,14 +512,19 @@ def solution_detail(solution_id):
                 differences.append((address, ori1_value, mod1_value, bit_size))
         else:
             logger.warning(f"No differences found for solution {solution_id}")
-    
+
+        ori1_info = storage.get_file_info(solution_id, 'ori1')
+        mod1_info = storage.get_file_info(solution_id, 'mod1')
+
     return render_template(
         'main/solution_detail.html',
         title=f'Solution {solution_id}',
         solution=solution,
         differences=differences,
         has_differences=has_differences,
-        total_differences=total_differences
+        total_differences=total_differences,
+        ori1_info=ori1_info,
+        mod1_info=mod1_info
     )
 
 @bp.route('/add_solution', methods=['GET', 'POST'])
