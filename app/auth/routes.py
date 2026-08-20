@@ -77,8 +77,8 @@ def reset_password():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
     
-    # Obtener token de la URL
-    token = request.args.get('token')
+    # Obtener token de la URL (Supabase envía access_token en el hash, el JS lo convierte a query param)
+    token = request.args.get('access_token') or request.args.get('token')
     if not token:
         flash('Invalid or missing reset token.', 'danger')
         return redirect(url_for('auth.forgot_password'))
