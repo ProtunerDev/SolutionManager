@@ -77,25 +77,27 @@ def reset_password():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
     
-    # Obtener token de la URL (Supabase envía access_token en el hash, el JS lo convierte a query param)
-    token = request.args.get('access_token') or request.args.get('token')
-    if not token:
+    # Supabase implicit flow: JS extracts tokens from URL hash and redirects here with query params
+    # Supabase PKCE flow: 'code' arrives directly as a query param
+    access_token = request.args.get('access_token') or request.args.get('token')
+    refresh_token = request.args.get('refresh_token', '')
+    code = request.args.get('code')
+
+    if not access_token and not code:
         flash('Invalid or missing reset token.', 'danger')
         return redirect(url_for('auth.forgot_password'))
-    
+
     form = ResetPasswordForm()
     if form.validate_on_submit():
         new_password = form.password.data
-        
-        # Intentar resetear password
-        success = supabase_auth.reset_password(token, new_password)
-        
+        success = supabase_auth.reset_password(new_password, access_token=access_token,
+                                               refresh_token=refresh_token, code=code)
         if success:
             flash('Your password has been updated. You can now sign in.', 'success')
             return redirect(url_for('auth.login'))
         else:
             flash('Error updating password. The token may be invalid or expired.', 'danger')
-    
+
     return render_template('auth/reset_password.html', title='Reset Password', form=form)
 
 @bp.route('/logout')

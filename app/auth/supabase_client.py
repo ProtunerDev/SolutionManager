@@ -223,23 +223,33 @@ class SupabaseAuthClient:
             logger.error(f"Error sending password reset to {email}: {e}")
             return False
     
-    def reset_password(self, access_token, new_password):
-        """Resetear password usando token de acceso"""
+    def reset_password(self, new_password, access_token=None, refresh_token=None, code=None):
+        """Resetear password usando token de acceso (implicit flow) o code (PKCE flow)"""
         try:
-            # Set the session with the access token
-            self.supabase.auth.set_session(access_token, "")
-            
-            # Update the password
-            response = self.supabase.auth.update_user({
-                "password": new_password
-            })
-            
+            if code:
+                # PKCE flow: exchange the one-time code for a session
+                session_response = self.supabase.auth.exchange_code_for_session(code)
+                if not (session_response and session_response.session):
+                    logger.error("PKCE code exchange returned no session")
+                    return False
+            elif access_token:
+                # Implicit flow: set the session directly.
+                # refresh_token must be a non-empty string; fall back to access_token
+                # only as a last resort so Supabase SDK doesn't reject the call.
+                rt = refresh_token if refresh_token else access_token
+                self.supabase.auth.set_session(access_token, rt)
+            else:
+                logger.error("reset_password called with neither access_token nor code")
+                return False
+
+            response = self.supabase.auth.update_user({"password": new_password})
+
             if response.user:
                 logger.info("Password reset successfully")
                 return True
-            
+
             return False
-            
+
         except Exception as e:
             logger.error(f"Error resetting password: {e}")
             return False
