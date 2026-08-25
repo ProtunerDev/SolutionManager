@@ -66,3 +66,24 @@
     </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+// Detect Supabase implicit flow recovery tokens in URL hash and redirect to reset_password
+(function() {
+    var hash = window.location.hash;
+    if (!hash) return;
+    var params = {};
+    hash.substring(1).split('&').forEach(function(part) {
+        var pair = part.split('=');
+        params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+    });
+    if (params['type'] === 'recovery' && params['access_token']) {
+        var url = "{{ url_for('auth.reset_password') }}"
+            + "?access_token=" + encodeURIComponent(params['access_token'])
+            + "&refresh_token=" + encodeURIComponent(params['refresh_token'] || '');
+        window.location.replace(url);
+    }
+})();
+</script>
+{% endblock %}
