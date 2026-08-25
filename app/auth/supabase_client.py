@@ -215,10 +215,16 @@ class SupabaseAuthClient:
     def send_password_reset(self, email):
         """Enviar email de reset de password"""
         try:
-            response = self.supabase.auth.reset_password_email(email)
+            from flask import current_app
+            app_url = current_app.config.get('APP_URL', '').rstrip('/')
+            redirect_to = f"{app_url}/auth/reset_password"
+            response = self.supabase.auth.reset_password_email(
+                email,
+                options={"redirect_to": redirect_to}
+            )
             logger.info(f"Password reset email sent to: {email}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error sending password reset to {email}: {e}")
             return False
