@@ -41,8 +41,8 @@ pybabel compile -d app/translations
 ### Testing
 ```bash
 pytest
-pytest tests/test_specific.py  # single test file
-pytest --cov=app tests/        # with coverage
+pytest test_specific.py  # test stubs are in the root, not a tests/ subdirectory
+pytest --cov=app .
 ```
 
 ## Environment Configuration
@@ -76,11 +76,19 @@ AWS_S3_REGION=us-east-1
 ## Architecture
 
 ### Application Factory
-`app/__init__.py` creates the Flask app using the factory pattern (`create_app()`). It initializes Flask-Login, Flask-WTF CSRF protection, Flask-Babel (i18n), Supabase auth client, and registers blueprints.
+`app/__init__.py` creates the Flask app using the factory pattern (`create_app()`). It initializes Flask-Login, Flask-WTF CSRF protection, Flask-Limiter (rate limiting), Flask-Babel (i18n), Supabase auth client, and a PostgreSQL connection pool. Registers three blueprints: `main`, `auth`, `api`.
+
+Context processors inject `csrf_token` and i18n functions (`_()`, `_n()`, `current_language`, `available_languages`) into all templates.
+
+### Config
+`config.py` defines `DevelopmentConfig`, `ProductionConfig`, and `TestingConfig`. The factory selects based on `FLASK_ENV`.
 
 ### Blueprints
-- **`app/main/`** — All core business logic: home dashboard, ECU file upload, binary file comparison, solution CRUD, and file download routes. The `routes.py` here is the largest file.
+- **`app/main/`** — All core business logic: home dashboard, ECU file upload, binary file comparison, solution CRUD, and file download routes. `routes.py` is the largest file (~1500 lines).
 - **`app/auth/`** — Authentication via Supabase: login/logout, password reset, user invitation, profile management. Mounted at `/auth`.
+- **`app/api/`** — RESTful endpoints for dynamic dropdowns and admin-only solution deletion. Mounted at `/api`.
+
+Note: `app/auth/` contains `*_backup.py` and `*_simplified.py` files that are not imported — ignore them.
 
 ### Authentication Model
 Authentication is delegated entirely to **Supabase**. `app/auth/supabase_client.py` wraps the Supabase SDK. `app/auth/models.py` defines `SupabaseUser` which implements Flask-Login's `UserMixin`. There is no local user table for auth — Supabase manages credentials and sessions.
@@ -93,12 +101,15 @@ Authentication is delegated entirely to **Supabase**. `app/auth/supabase_client.
 Both implement the same interface. Always use `get_file_storage()` when reading/writing ECU files — never instantiate storage directly.
 
 ### Database Layer
-`app/database/db_manager.py` — `DatabaseManager` class manages all PostgreSQL interactions via `psycopg2` (no ORM). Uses parameterized queries throughout. The schema is in `app/database/schema.sql`.
+`app/database/db_manager.py` — `DatabaseManager` class manages all PostgreSQL interactions via `psycopg2` (no ORM). Uses parameterized queries throughout. Connection pooling is in `app/database/db_pool.py`. Supports both `DATABASE_URL` (Railway) and individual `DB_*` env vars. The schema is in `app/database/schema.sql`.
 
 Key tables: `vehicle_info`, `solutions`, `solution_types`, `file_metadata`, `differences_metadata`, `field_dependencies`, `field_values`.
 
 ### Binary Comparison
 `app/utils/binary_handler.py` — `BinaryHandler` performs byte-level diff between ECU binary files (ORI vs MOD). Differences are stored in `differences_metadata`.
+
+### Rate Limiting
+`app/extensions.py` configures Flask-Limiter. A 429 error handler is registered in the factory. Rate-limit breach notifications are sent via `app/utils/security_notifier.py`.
 
 ### Internationalization
 `app/i18n.py` wraps Flask-Babel. Use `_()` and `_n()` for translations in Python code. Templates receive these functions via context processor. Translations live in `app/translations/es/LC_MESSAGES/`.
@@ -108,6 +119,6 @@ ECU binary uploads are restricted to: `.bin`, `.ori`, `.mod`, `.dtf`
 
 ## Deployment
 
-- **Heroku / Procfile**: `web: waitress-serve --port=$PORT run:app`
-- **nixpacks (Railway/Render)**: `cmd = "gunicorn run:app"` — see `nixpacks.toml`
+- **Heroku / Procfile**: `web: gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
+- **nixpacks (Railway/Render)**: same gunicorn command — see `nixpacks.toml`
 - Python 3.12+ required
