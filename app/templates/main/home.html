@@ -21,10 +21,11 @@
                         <label for="search" class="form-label">
                             <i class="fas fa-search"></i> {{ _('Search Solutions') }}
                         </label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="search" 
-                               name="search" 
+                        <input type="text"
+                               class="form-control"
+                               id="search"
+                               name="search"
+                               autocomplete="off"
                                value="{{ search_query or '' }}"
                                placeholder="{{ _('Search by vehicle, make, model, engine, hardware, software, or description...') }}">
                     </div>
