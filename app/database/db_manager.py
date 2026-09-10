@@ -110,6 +110,7 @@ class DatabaseManager:
             if self.conn and self._in_transaction:
                 self.conn.rollback()
         self._in_transaction = False
+        self.close()
         return False
 
     def close(self):
