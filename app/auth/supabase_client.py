@@ -254,6 +254,10 @@ class SupabaseAuthClient:
             return False
 
         except Exception as e:
+            error_msg = str(e).lower()
+            if 'new password should be different' in error_msg or 'same password' in error_msg:
+                logger.warning(f"Password reset rejected — same as current: {e}")
+                return 'same_password'
             logger.error(f"Error resetting password: {e}")
             return False
 

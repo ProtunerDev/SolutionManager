@@ -90,11 +90,13 @@ def reset_password():
     form = ResetPasswordForm()
     if form.validate_on_submit():
         new_password = form.password.data
-        success = supabase_auth.reset_password(new_password, access_token=access_token,
-                                               refresh_token=refresh_token, code=code)
-        if success:
+        result = supabase_auth.reset_password(new_password, access_token=access_token,
+                                              refresh_token=refresh_token, code=code)
+        if result is True:
             flash('Your password has been updated. You can now sign in.', 'success')
             return redirect(url_for('auth.login'))
+        elif result == 'same_password':
+            flash('New password must be different from your current password.', 'danger')
         else:
             flash('Error updating password. The token may be invalid or expired.', 'danger')
 
