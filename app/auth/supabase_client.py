@@ -85,11 +85,9 @@ class SupabaseAuthClient:
             if not token:
                 return None
             
-            # Establecer el token en el cliente
-            self.supabase.auth.set_session(token, session.get('refresh_token', ''))
-            
-            # Obtener usuario actual
-            user_response = self.supabase.auth.get_user()
+            # Pass the JWT directly — avoids mutating shared client session state
+            # (set_session on a singleton corrupts concurrent requests from different users)
+            user_response = self.supabase.auth.get_user(token)
             
             if user_response and user_response.user:
                 return user_response.user.model_dump()
